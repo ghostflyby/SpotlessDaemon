@@ -1,3 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2025 ghostflyby
+ * SPDX-License-Identifier: LGPL-3.0-or-later
+ * Part of SpotlessDaemon
+ */
+
 dependencyResolutionManagement {
 
     // Use Maven Central and the Gradle Plugin Portal for resolving dependencies in the shared build logic (`buildSrc`) project.
