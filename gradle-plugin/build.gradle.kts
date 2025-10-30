@@ -1,13 +1,18 @@
+/*
+ * SPDX-FileCopyrightText: 2025 ghostflyby
+ * SPDX-License-Identifier: LGPL-3.0-or-later
+ * Part of SpotlessDaemon
+ */
+
 plugins {
-    // Apply the shared build logic from a convention plugin.
-    // The shared code is located in `buildSrc/src/main/kotlin/kotlin-jvm.gradle.kts`.
-    id("buildsrc.convention.kotlin-jvm")
+    id("kotlin-jvm")
     `kotlin-dsl`
 }
 
 gradlePlugin {
     plugins {
-        create("spotless-daemon") {
+        val spotlessDaemon by creating
+        spotlessDaemon.apply {
             id = "dev.ghostflyby.spotless.daemon"
             implementationClass = "dev.ghostflyby.spotless.daemon.SpotlessDaemon"
         }
@@ -20,4 +25,5 @@ repositories {
 
 dependencies {
     implementation(libs.spotless)
+    implementation(libs.bundles.ktor.server)
 }

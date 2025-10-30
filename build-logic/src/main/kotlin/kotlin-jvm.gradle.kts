@@ -1,6 +1,8 @@
-// The code in this file is a convention plugin - a Gradle mechanism for sharing reusable build logic.
-// `buildSrc` is a Gradle-recognized directory and every plugin there will be easily available in the rest of the build.
-package buildsrc.convention
+/*
+ * SPDX-FileCopyrightText: 2025 ghostflyby
+ * SPDX-License-Identifier: LGPL-3.0-or-later
+ * Part of SpotlessDaemon
+ */
 
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
