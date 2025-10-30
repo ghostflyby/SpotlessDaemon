@@ -5,8 +5,9 @@
  */
 
 plugins {
-    id("kotlin-jvm")
+    alias(libs.plugins.kotlin)
     `kotlin-dsl`
+    signing
 }
 
 gradlePlugin {
@@ -27,3 +28,10 @@ dependencies {
     implementation(libs.spotless)
     implementation(libs.bundles.ktor.server)
 }
+
+signing {
+    val signingInMemoryKey: String? by project
+    val signingInMemoryKeyPassword: String? by project
+    useInMemoryPgpKeys(signingInMemoryKey, signingInMemoryKeyPassword)
+}
+
