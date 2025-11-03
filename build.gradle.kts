@@ -7,3 +7,5 @@
 plugins {
     alias(libs.plugins.changelog)
 }
+
+version = project.property("pluginVersion").toString()
