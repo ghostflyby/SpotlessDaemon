@@ -1,10 +1,11 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 /*
  * SPDX-FileCopyrightText: 2025 ghostflyby
  * SPDX-License-Identifier: LGPL-3.0-or-later
  * Part of SpotlessDaemon
  */
 
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     // The Kotlin DSL plugin provides a convenient way to develop convention plugins.
