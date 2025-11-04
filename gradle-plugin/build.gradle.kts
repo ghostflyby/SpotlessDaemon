@@ -12,6 +12,7 @@ plugins {
 }
 
 version = project.property("pluginVersion").toString()
+group = project.property("pluginGroup").toString()
 
 gradlePlugin {
     website = "https://github.com/ghostflyby/SpotlessDaemon"
