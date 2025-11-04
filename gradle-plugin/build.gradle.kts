@@ -1,31 +1,28 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 /*
  * SPDX-FileCopyrightText: 2025 ghostflyby
  * SPDX-License-Identifier: LGPL-3.0-or-later
  * Part of SpotlessDaemon
  */
-
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     `kotlin-dsl`
     signing
+    alias(libs.plugins.gradle.plugin.publish)
 }
 
 version = project.property("pluginVersion").toString()
 
 gradlePlugin {
-    plugins {
-        val spotlessDaemon by creating
-        spotlessDaemon.apply {
-            id = "dev.ghostflyby.spotless.daemon"
-            implementationClass = "dev.ghostflyby.spotless.daemon.SpotlessDaemon"
-        }
+    website = "https://github.com/ghostflyby/SpotlessDaemon"
+    vcsUrl = "https://github.com/ghostflyby/SpotlessDaemon.git"
+    plugins.register("spotlessDaemon") {
+        id = "dev.ghostflyby.spotless.daemon"
+        displayName = "Spotless Daemon"
+        description = "Long running http daemon task for formatting files with Spotless"
+        tags = setOf("style", "format", "spotless", "daemon", "code-quality")
+        implementationClass = "dev.ghostflyby.spotless.daemon.SpotlessDaemon"
     }
-}
-repositories {
-    mavenCentral()
-    gradlePluginPortal()
 }
 
 dependencies {
