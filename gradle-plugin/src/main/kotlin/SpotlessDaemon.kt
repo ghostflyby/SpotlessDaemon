@@ -27,28 +27,19 @@ import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
-import org.gradle.api.services.BuildService
-import org.gradle.api.services.BuildServiceParameters
 import org.gradle.api.services.ServiceReference
 import org.gradle.api.tasks.*
-import org.gradle.api.tasks.Optional
 import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
 import org.gradle.work.DisableCachingByDefault
 import org.gradle.work.Incremental
-import org.gradle.workers.WorkerExecutor
 import java.io.File
 import java.nio.charset.Charset
-import java.util.*
-import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 
 @Suppress("unused")
 class SpotlessDaemon : Plugin<Project> {
     override fun apply(target: Project) {
-        if (!target.plugins.hasPlugin(SPOTLESS_PLUGIN_ID)) {
-            return
-        }
         target.pluginManager.withPlugin(SPOTLESS_PLUGIN_ID) {
             target.apply()
         }
@@ -56,14 +47,14 @@ class SpotlessDaemon : Plugin<Project> {
 
     companion object {
         const val SPOTLESS_PLUGIN_ID = "com.diffplug.spotless"
+        const val SPOTLESS_DAEMON_TASK_NAME = "spotlessDaemon"
     }
 }
 
 private fun Project.apply() {
-    val s = gradle.sharedServices.registerIfAbsent("SpotlessDaemonBridgeService", FutureService::class.java) {
-    }
+    val s = gradle.sharedServices.registerIfAbsent("SpotlessDaemonBridgeService", FutureService::class.java) {}
 
-    tasks.register<SpotlessDaemonTask>("spotlessDaemon") {
+    tasks.register<SpotlessDaemonTask>(SpotlessDaemon.SPOTLESS_DAEMON_TASK_NAME) {
         usesService(s)
         projectRoot.set(layout.projectDirectory)
         tasks.withType<SpotlessTask>().forEach {
@@ -77,7 +68,7 @@ private fun Project.apply() {
 }
 
 @DisableCachingByDefault(because = "Daemon-like task; no reproducible outputs")
-internal abstract class SpotlessDaemonTask @Inject constructor(private val worker: WorkerExecutor) : DefaultTask() {
+internal abstract class SpotlessDaemonTask @Inject constructor() : DefaultTask() {
 
     init {
         unixSocket.convention(project.providers.gradleProperty("spotlessDaemon.unixSocket"))
@@ -108,13 +99,16 @@ internal abstract class SpotlessDaemonTask @Inject constructor(private val worke
     @TaskAction
     fun run() {
 
-        val server = embeddedServer(CIO, configure = {
-            if (unixSocket.isPresent) unixConnector(unixSocket.get())
-            else connector {
-                port = this@SpotlessDaemonTask.port.get()
-                host = "localhost"
-            }
-        }) {
+        val server = embeddedServer(
+            CIO,
+            configure = {
+                if (unixSocket.isPresent) unixConnector(unixSocket.get())
+                else connector {
+                    port = this@SpotlessDaemonTask.port.get()
+                    host = "localhost"
+                }
+            },
+        ) {
             install(IgnoreTrailingSlash)
         }
 
@@ -138,41 +132,16 @@ internal abstract class SpotlessDaemonTask @Inject constructor(private val worke
 
         logger.lifecycle("Spotless Daemon running on port ${port.get()}")
 
-        server.start(wait = false)
-
 
         runBlocking {
-            while (true) {
-                val req = channel.receive()
-                val (path, content, future) = req
+            try {
+                server.startSuspend(wait = false)
 
-                val id = UUID.randomUUID()
-                service.get().map[id] = future
+                mainLoop(channel, service.get())
 
-                val formatter = service.get().getFormatterFor(path) ?: future.run {
-                    complete(Resp.NotFormatted("File not covered by Spotless: $path", HttpStatusCode.NotFound))
-                    continue
-                }
-
-                val bytes = content.toByteArray(formatter.encoding)
-                val state = DirtyState.of(formatter, File(path), bytes, content)
-
-
-                if (state.isClean) {
-                    future.complete(Resp.NotFormatted("", HttpStatusCode.OK))
-                    continue
-                }
-
-
-
-                future.complete(Resp.Formatted(state, formatter.encoding))
-
-//                worker.noIsolation().submit(FormatAction::class.java) {
-//                    this.path.set(path)
-//                    this.content.set(content)
-//                    fileService.set(service)
-//                    reply.set(id)
-//                }
+            } finally {
+                channel.close()
+                server.stopSuspend(1000, 2000)
             }
         }
 
@@ -180,12 +149,43 @@ internal abstract class SpotlessDaemonTask @Inject constructor(private val worke
 
 }
 
+internal suspend fun mainLoop(channel: Channel<Req>, service: FutureService) {
+    for ((path, content, future) in channel) {
+
+//        val id = service.putFuture(future)
+
+        val formatter = service.getFormatterFor(path) ?: future.run {
+            complete(Resp.NotFormatted("File not covered by Spotless: $path", HttpStatusCode.NotFound))
+            continue
+        }
+
+        val bytes = content.toByteArray(formatter.encoding)
+        val state = DirtyState.of(formatter, File(path), bytes, content)
+
+
+        if (state.isClean) {
+            future.complete(Resp.NotFormatted("", HttpStatusCode.OK))
+            continue
+        }
+
+
+        future.complete(Resp.Formatted(state, formatter.encoding))
+
+//                worker.noIsolation().submit(FormatAction::class.java) {
+//                    this.path.set(path)
+//                    this.content.set(content)
+//                    fileService.set(service)
+//                    reply.set(id)
+//                }
+    }
+}
+
 internal data class Req(val path: String, val content: String, val future: CompletableDeferred<Resp>)
 
 internal suspend fun RoutingContext.action(channel: Channel<Req>) {
     val path = call.queryParameters["path"] ?: return call.respondText(
         "Missing path query parameter",
-        status = HttpStatusCode.BadRequest
+        status = HttpStatusCode.BadRequest,
     )
     val content = call.receiveText()
 
@@ -220,43 +220,3 @@ internal sealed interface Resp {
 }
 
 
-internal interface FutureServiceParams : BuildServiceParameters {
-    val fileCollection: ConfigurableFileCollection
-    val formatterMapping: MapProperty<FileCollection, Formatter>
-    val projectRoot: DirectoryProperty
-}
-
-internal abstract class FutureService @Inject constructor() :
-    BuildService<FutureServiceParams> {
-
-    fun getFormatterFor(file: String): Formatter? {
-        val relativeFile = parameters.projectRoot.get().file(file).asFile
-        val targets = parameters.fileCollection
-        if (targets.contains(relativeFile)) {
-            return getFormatterFor(relativeFile)
-        }
-        val absFile = File(file)
-        if (targets.contains(absFile)) {
-            return getFormatterFor(absFile)
-        }
-        return null
-    }
-
-    internal val map = ConcurrentHashMap<UUID, CompletableDeferred<Resp>>()
-
-    private fun getFormatterFor(file: File): Formatter? {
-
-
-        val mapping = parameters.formatterMapping.get()
-        for ((key, value) in mapping) {
-            if (key.contains(file)) {
-                return value
-            }
-        }
-        return null
-    }
-
-    fun getReplyFuture(id: UUID): CompletableDeferred<Resp> {
-        return map.remove(id) ?: CompletableDeferred()
-    }
-}
