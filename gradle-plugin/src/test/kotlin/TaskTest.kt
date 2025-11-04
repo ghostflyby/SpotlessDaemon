@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2025 ghostflyby
+ * SPDX-License-Identifier: LGPL-3.0-or-later
+ * Part of SpotlessDaemon
+ */
 import com.diffplug.gradle.spotless.SpotlessPlugin
 import dev.ghostflyby.spotless.daemon.SpotlessDaemon
 import dev.ghostflyby.spotless.daemon.SpotlessDaemonTask
@@ -8,12 +13,6 @@ import org.gradle.testfixtures.ProjectBuilder
 import kotlin.test.Test
 import kotlin.test.assertFails
 
-
-/*
- * SPDX-FileCopyrightText: 2025 ghostflyby
- * SPDX-License-Identifier: LGPL-3.0-or-later
- * Part of SpotlessDaemon
- */
 
 class TaskTest {
     private fun project(): Project {
