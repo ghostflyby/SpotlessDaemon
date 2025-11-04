@@ -9,3 +9,7 @@ plugins {
 }
 
 version = project.property("pluginVersion").toString()
+
+tasks.getChangelog {
+    this.noEmptySections = true
+}
