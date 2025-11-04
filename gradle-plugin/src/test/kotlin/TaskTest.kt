@@ -6,7 +6,7 @@ import org.gradle.kotlin.dsl.apply
 import org.gradle.kotlin.dsl.named
 import org.gradle.testfixtures.ProjectBuilder
 import kotlin.test.Test
-import kotlin.test.assertNotNull
+import kotlin.test.assertFails
 
 
 /*
@@ -34,10 +34,8 @@ class TaskTest {
     fun `run without host config`() {
         val project = project()
         val task = project.spotlessDaemonTask()
-        try {
+        assertFails("Should fail when neither port nor unixSocket is set") {
             task.get().actions.forEach { it.execute(task.get()) }
-        } catch (e: Exception) {
-            assertNotNull(e, "Expected to fail with neither port nor unixSocket configured")
         }
     }
 
