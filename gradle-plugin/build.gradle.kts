@@ -8,7 +8,6 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 
 plugins {
-    alias(libs.plugins.kotlin)
     `kotlin-dsl`
     signing
 }
@@ -32,6 +31,7 @@ repositories {
 dependencies {
     implementation(libs.spotless)
     implementation(libs.bundles.ktor.server)
+    testImplementation(kotlin("test"))
 }
 
 signing {
