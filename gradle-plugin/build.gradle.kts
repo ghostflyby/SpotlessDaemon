@@ -46,3 +46,6 @@ kotlin {
     compilerOptions.jvmTarget = JvmTarget.JVM_17
 }
 
+tasks.publish {
+    dependsOn(tasks.publishPlugins)
+}
