@@ -27,7 +27,7 @@ class TaskTest {
 
     /**
      * @see [SpotlessDaemonTask.port]
-     * @see [SpotlessDaemonTask.unixSocket]
+     * @see [SpotlessDaemonTask.unixsocket]
      */
     @Test
     fun `run without host config`() {

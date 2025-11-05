@@ -1,23 +1,43 @@
 # SpotlessDaemon
 
-This project uses [Gradle](https://gradle.org/).
-To build and run the application, use the *Gradle* tool window by clicking the Gradle icon in the right-hand toolbar,
-or run it directly from the terminal:
+Gradle plugin exposing a long-running HTTP daemon to format code using [Spotless](https://github.com/diffplug/spotless).
 
-* Run `./gradlew run` to build and run the application.
-* Run `./gradlew build` to only build the application.
-* Run `./gradlew check` to run all checks, including tests.
-* Run `./gradlew clean` to clean all build outputs.
+Designed as a companion for integrating spotless into IDEs with higher throughput.
 
-Note the usage of the Gradle Wrapper (`./gradlew`).
-This is the suggested way to use Gradle in production projects.
+## Getting Started
 
-[Learn more about the Gradle Wrapper](https://docs.gradle.org/current/userguide/gradle_wrapper.html).
+### Gradle
 
-[Learn more about Gradle tasks](https://docs.gradle.org/current/userguide/command_line_interface.html#common_tasks).
+In your buildscript, apply the plugin:
 
-This project follows the suggested multi-module setup and consists of the `app` and `utils` subprojects.
-The shared build logic was extracted to a convention plugin located in `buildSrc`.
+```kotlin
+plugins {
+    id("com.diffplug.spotless")
+    id("dev.ghostflyby.spotless.daemon")
+}
+```
 
-This project uses a version catalog (see `gradle/libs.versions.toml`) to declare and version dependencies
-and both a build cache and a configuration cache (see `gradle.properties`).
+**Don't forget to apply the `com.diffplug.spotless` plugin**
+
+Specify address with gradle properties and start the daemon:
+
+```shell
+./gradlew spotlessDaemon -Pdev.ghostflyby.spotless.daemon.port=8080
+./gradlew spotlessDaemon -Pdev.ghostflyby.spotless.daemon.unixsocket=/path/to/socket
+```
+
+The task will block, running the daemon until interrupted.
+
+### HTTP API
+
+#### GET /
+
+* `200 OK` as a health check
+
+#### POST /?path={path}
+
+* `404 Not Found` if file not covered by spotless, either no such file or not included in config.
+* `400 Bad Request` if `path` parameter is missing
+* `200 OK` with formatted file content as `text/plain` in body if successful
+* `200 OK` with empty body if no changes were made
+* `500 Internal Server Error` if problems occurred during formatting
