@@ -16,6 +16,7 @@ import io.ktor.server.engine.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
@@ -23,8 +24,8 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.file.ConfigurableFileCollection
-import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileCollection
+import org.gradle.api.file.ProjectLayout
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.services.ServiceReference
@@ -56,7 +57,6 @@ private fun Project.apply() {
 
     tasks.register<SpotlessDaemonTask>(SpotlessDaemon.SPOTLESS_DAEMON_TASK_NAME) {
         usesService(s)
-        projectRoot.set(layout.projectDirectory)
         tasks.withType<SpotlessTask>().forEach {
             targets.from(it.target)
             val formatter =
@@ -68,7 +68,7 @@ private fun Project.apply() {
 }
 
 @DisableCachingByDefault(because = "Daemon-like task; no reproducible outputs")
-internal abstract class SpotlessDaemonTask @Inject constructor() : DefaultTask() {
+internal abstract class SpotlessDaemonTask @Inject constructor(private val layout: ProjectLayout) : DefaultTask() {
 
     init {
         unixsocket.convention(project.providers.gradleProperty("dev.ghostflyby.spotless.daemon.unixsocket"))
@@ -79,10 +79,8 @@ internal abstract class SpotlessDaemonTask @Inject constructor() : DefaultTask()
     @get:Optional
     abstract val unixsocket: Property<String>
 
-    @get:InputDirectory
-    abstract val projectRoot: DirectoryProperty
-
     @get:Input
+    @get:Optional
     abstract val port: Property<Int>
 
     @get:ServiceReference
@@ -117,6 +115,10 @@ internal abstract class SpotlessDaemonTask @Inject constructor() : DefaultTask()
             post("") {
                 action(channel)
             }
+            post("/stop") {
+                call.respond(HttpStatusCode.OK)
+                channel.cancel()
+            }
             get("") {
                 call.respondText("Spotless Daemon is running.")
             }
@@ -128,15 +130,9 @@ internal abstract class SpotlessDaemonTask @Inject constructor() : DefaultTask()
         }
 
         val param = service.get().parameters
-        param.projectRoot.set(projectRoot)
+        param.projectRoot.set(layout.projectDirectory)
         param.fileCollection.from(targets)
         param.formatterMapping.set(formatterMapping)
-
-
-
-
-        logger.lifecycle("Spotless Daemon running on port ${port.get()}")
-
 
         runBlocking {
             try {
@@ -144,6 +140,7 @@ internal abstract class SpotlessDaemonTask @Inject constructor() : DefaultTask()
 
                 mainLoop(channel, service.get())
 
+            } catch (_: CancellationException) {
             } finally {
                 channel.close()
                 server.stopSuspend(1000, 2000)

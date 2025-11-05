@@ -10,12 +10,12 @@ import dev.ghostflyby.spotless.daemon.SpotlessDaemonTask
 import org.gradle.kotlin.dsl.apply
 import org.gradle.kotlin.dsl.withType
 import org.gradle.testfixtures.ProjectBuilder
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNotEquals
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotEquals
+import org.junit.jupiter.api.Test
 
 
-class PluginApplyTest {
+class GradlePluginApplyTest {
     @Test
     fun `apply without spotless`() {
         val project = ProjectBuilder.builder().build()
