@@ -71,13 +71,13 @@ private fun Project.apply() {
 internal abstract class SpotlessDaemonTask @Inject constructor() : DefaultTask() {
 
     init {
-        unixSocket.convention(project.providers.gradleProperty("spotlessDaemon.unixSocket"))
-        port.convention(project.providers.gradleProperty("spotlessDaemon.port").map { it.toInt() })
+        unixsocket.convention(project.providers.gradleProperty("dev.ghostflyby.spotless.daemon.unixsocket"))
+        port.convention(project.providers.gradleProperty("dev.ghostflyby.spotless.daemon.port").map { it.toInt() })
     }
 
     @get:Input
     @get:Optional
-    abstract val unixSocket: Property<String>
+    abstract val unixsocket: Property<String>
 
     @get:InputDirectory
     abstract val projectRoot: DirectoryProperty
@@ -102,7 +102,7 @@ internal abstract class SpotlessDaemonTask @Inject constructor() : DefaultTask()
         val server = embeddedServer(
             CIO,
             configure = {
-                if (unixSocket.isPresent) unixConnector(unixSocket.get())
+                if (unixsocket.isPresent) unixConnector(unixsocket.get())
                 else connector {
                     port = this@SpotlessDaemonTask.port.get()
                     host = "localhost"
