@@ -83,5 +83,5 @@ jobs:
           
           gh release create v$VERSION \
             --draft \
-            --title $VERSION \
+            --title v$VERSION \
             --notes-file $RELEASE_NOTE
