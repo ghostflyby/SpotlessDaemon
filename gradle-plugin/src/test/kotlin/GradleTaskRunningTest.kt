@@ -118,14 +118,18 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
     fun `health check`(): Unit =
         runBlocking {
             val t = startRunner()
+            println("SERVER STARTED projectDir = $projectDir, exists=${projectDir.exists()}, canWrite=${projectDir.canWrite()}")
 
             delay(12.seconds)
+            println("DELAY MADE projectDir = $projectDir, exists=${projectDir.exists()}, canWrite=${projectDir.canWrite()}")
 
             val response = http.get("")
             assertEquals(HttpStatusCode.OK, response.status, "Should respond with 200 OK")
+            println("after response projectDir = $projectDir, exists=${projectDir.exists()}, canWrite=${projectDir.canWrite()}")
 
             val stop = http.post("/stop")
             assertEquals(HttpStatusCode.OK, stop.status, "Should stop successfully")
+            println("before join projectDir = $projectDir, exists=${projectDir.exists()}, canWrite=${projectDir.canWrite()}")
             t.join()
         }
 }
