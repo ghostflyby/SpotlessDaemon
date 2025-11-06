@@ -28,7 +28,7 @@ import kotlin.time.Duration.Companion.seconds
 
 @ParameterizedClass
 @EnumSource(GradleTaskRunningTest.Kind::class)
-class GradleTaskRunningTest(val kind: Kind, @TempDir projectDir: File) {
+class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File) {
 
     private val buildFile: File = projectDir.resolve("build.gradle.kts").apply {
         writeText(
