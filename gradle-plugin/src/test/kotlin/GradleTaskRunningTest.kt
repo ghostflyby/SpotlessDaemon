@@ -120,7 +120,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
             val t = startRunner()
             println("SERVER STARTED projectDir = $projectDir, exists=${projectDir.exists()}, canWrite=${projectDir.canWrite()}")
 
-            delay(12.seconds)
+            delay(6.seconds)
             println("DELAY MADE projectDir = $projectDir, exists=${projectDir.exists()}, canWrite=${projectDir.canWrite()}")
 
             val response = http.get("")
