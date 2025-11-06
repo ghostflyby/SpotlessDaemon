@@ -32,6 +32,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
 
 
     init {
+        projectDir.mkdirs()
         val buildFile = projectDir.resolve("build.gradle.kts")
         buildFile.writeText(
             """
