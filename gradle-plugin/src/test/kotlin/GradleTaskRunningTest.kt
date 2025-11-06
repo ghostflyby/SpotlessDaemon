@@ -40,6 +40,7 @@ class GradleTaskRunningTest(val kind: Kind) {
     @BeforeEach
     fun setup() {
         buildFile = projectDir.resolve("build.gradle.kts")
+        projectDir.createNewFile()
         buildFile.writeText(
             """
             plugins {
