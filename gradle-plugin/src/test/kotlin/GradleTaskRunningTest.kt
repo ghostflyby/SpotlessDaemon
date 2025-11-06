@@ -16,7 +16,6 @@ import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.io.TempDir
@@ -29,18 +28,11 @@ import kotlin.time.Duration.Companion.seconds
 
 @ParameterizedClass
 @EnumSource(GradleTaskRunningTest.Kind::class)
-class GradleTaskRunningTest(val kind: Kind) {
+class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File) {
 
 
-    @TempDir
-    lateinit var projectDir: File
-
-    lateinit var buildFile: File
-
-    @BeforeEach
-    fun setup() {
-        buildFile = projectDir.resolve("build.gradle.kts")
-        projectDir.createNewFile()
+    init {
+        val buildFile = projectDir.resolve("build.gradle.kts")
         buildFile.writeText(
             """
             plugins {

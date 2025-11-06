@@ -38,7 +38,7 @@ jobs:
         if: ${{ failure() }}
         uses: actions/upload-artifact@v5
         with:
-          name: tests-result-${{ matrix.module }}
+          name: tests-result
           path: ${{ github.workspace }}/*/build/reports/tests
 
 
