@@ -16,6 +16,7 @@ import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.io.TempDir
@@ -32,7 +33,6 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
 
 
     init {
-        projectDir.mkdirs()
         val buildFile = projectDir.resolve("build.gradle.kts")
         buildFile.writeText(
             """
@@ -78,7 +78,19 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
         }
     }
 
+    @BeforeEach
+    fun setupProject() {
+        println("SETUP projectDir = $projectDir, exists=${projectDir.exists()}, canWrite=${projectDir.canWrite()}")
+    }
+
+
     private fun startRunner() = thread(start = true) {
+        println("THREAD START projectDir = $projectDir, exists=${projectDir.exists()}, canWrite=${projectDir.canWrite()}")
+
+        check(projectDir.isDirectory && projectDir.canWrite()) {
+            "projectDir invalid before GradleRunner: $projectDir"
+        }
+
         GradleRunner.create().withProjectDir(projectDir).withPluginClasspath().withArguments(
             ":spotlessDaemon",
             if (kind == Kind.UNIX)
@@ -107,7 +119,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
         runBlocking {
             val t = startRunner()
 
-            delay(6.seconds)
+            delay(12.seconds)
 
             val response = http.get("")
             assertEquals(HttpStatusCode.OK, response.status, "Should respond with 200 OK")
