@@ -19,18 +19,20 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
-import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedClass
 import org.junit.jupiter.params.provider.EnumSource
 import java.io.File
+import java.nio.file.Files
 import kotlin.concurrent.thread
 import kotlin.time.Duration.Companion.seconds
 
 
 @ParameterizedClass
 @EnumSource(GradleTaskRunningTest.Kind::class)
-class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File) {
+class GradleTaskRunningTest(val kind: Kind) {
 
+
+    val projectDir: File = Files.createTempDirectory("gradle-test").toFile().apply { deleteOnExit() }
 
     init {
         val buildFile = projectDir.resolve("build.gradle.kts")
