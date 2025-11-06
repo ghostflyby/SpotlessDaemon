@@ -92,7 +92,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
         }
 
         GradleRunner.create().withProjectDir(projectDir).withPluginClasspath().withArguments(
-            ":spotlessDaemon",
+            "spotlessDaemon",
             if (kind == Kind.UNIX)
                 "-Pdev.ghostflyby.spotless.daemon.unixsocket=$unixSocketPath"
             else "-Pdev.ghostflyby.spotless.daemon.port=$port",
