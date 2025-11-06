@@ -56,7 +56,7 @@ class GradleTaskRunningTest(val kind: Kind) {
      * @see [SpotlessDaemonTask.unixsocket]
      */
     enum class Kind {
-        TCP, UNIX
+        UNIX, TCP
     }
 
 
