@@ -68,7 +68,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
                     }
                 else {
                     url {
-                        host = "localhost"
+                        host = "127.0.0.1"
                         protocol = URLProtocol.HTTP
                     }
                     unixSocket(unixSocketPath)
