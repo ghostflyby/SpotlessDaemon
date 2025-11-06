@@ -106,7 +106,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
         runBlocking {
             val t = startRunner()
 
-            delay(3.seconds)
+            delay(6.seconds)
 
             val response = http.get("")
             assertEquals(HttpStatusCode.OK, response.status, "Should respond with 200 OK")
