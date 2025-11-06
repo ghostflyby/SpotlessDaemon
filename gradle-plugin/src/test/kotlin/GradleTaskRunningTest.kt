@@ -28,12 +28,10 @@ import kotlin.time.Duration.Companion.seconds
 
 @ParameterizedClass
 @EnumSource(GradleTaskRunningTest.Kind::class)
-class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File) {
+class GradleTaskRunningTest(val kind: Kind, @TempDir projectDir: File) {
 
-    private val buildFile by lazy { projectDir.resolve("build.gradle.kts") }
-
-    init {
-        buildFile.writeText(
+    private val buildFile: File = projectDir.resolve("build.gradle.kts").apply {
+        writeText(
             """
             plugins {
                 id("com.diffplug.spotless")
