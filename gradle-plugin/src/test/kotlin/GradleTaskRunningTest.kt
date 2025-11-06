@@ -94,7 +94,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
     @Test
     fun `run without host config`() {
         val result: BuildResult = GradleRunner.create().withProjectDir(projectDir).withPluginClasspath()
-            .withArguments(SpotlessDaemon.SPOTLESS_DAEMON_TASK_NAME).forwardOutput().buildAndFail()
+            .withArguments(SpotlessDaemon.SPOTLESS_DAEMON_TASK_NAME).buildAndFail()
         val outcome = result.task(":${SpotlessDaemon.SPOTLESS_DAEMON_TASK_NAME}")?.outcome
 
         assertEquals(TaskOutcome.FAILED, outcome, "Should fail when neither port nor unixSocket set")
