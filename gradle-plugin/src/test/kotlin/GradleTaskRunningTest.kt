@@ -62,7 +62,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
             defaultRequest {
                 if (kind == Kind.TCP)
                     url {
-                        host = "localhost"
+                        host = "127.0.0.1"
                         protocol = URLProtocol.HTTP
                         port = this@GradleTaskRunningTest.port
                     }

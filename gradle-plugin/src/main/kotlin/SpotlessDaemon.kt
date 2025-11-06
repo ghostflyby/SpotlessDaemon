@@ -103,7 +103,7 @@ internal abstract class SpotlessDaemonTask @Inject constructor(private val layou
                 if (unixsocket.isPresent) unixConnector(unixsocket.get())
                 else connector {
                     port = this@SpotlessDaemonTask.port.get()
-                    host = "localhost"
+                    host = "127.0.0.1"
                 }
             },
         ) {
