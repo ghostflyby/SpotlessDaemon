@@ -16,37 +16,23 @@ import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.AutoClose
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.io.TempDir
+import org.junit.jupiter.params.ParameterizedClass
+import org.junit.jupiter.params.provider.EnumSource
 import java.io.File
 import kotlin.concurrent.thread
 import kotlin.time.Duration.Companion.seconds
 
 
-class GradleTaskRunningTest(@param:TempDir val projectDir: File) {
+@ParameterizedClass
+@EnumSource(GradleTaskRunningTest.Kind::class)
+class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File) {
 
-    private val settingsFile by lazy { projectDir.resolve("settings.gradle.kts") }
     private val buildFile by lazy { projectDir.resolve("build.gradle.kts") }
 
-    private val port by lazy { findFreePort() }
-
-    @AutoClose
-    private val http =
-        HttpClient(CIO) {
-            defaultRequest {
-                url {
-                    host = "localhost"
-                    protocol = URLProtocol.HTTP
-                    port = this@GradleTaskRunningTest.port
-                }
-            }
-        }
-
-    @BeforeEach
-    fun setup() {
+    init {
         buildFile.writeText(
             """
             plugins {
@@ -56,7 +42,48 @@ class GradleTaskRunningTest(@param:TempDir val projectDir: File) {
             
             """.trimIndent(),
         )
+    }
 
+    /**
+     * @see [SpotlessDaemonTask.port]
+     * @see [SpotlessDaemonTask.unixsocket]
+     */
+    enum class Kind {
+        TCP, UNIX
+    }
+
+
+    private val port by lazy { findFreePort() }
+
+    private val unixSocketPath by lazy { projectDir.resolve("spotless-daemon.sock").absolutePath }
+
+    private val http by lazy {
+        HttpClient(CIO) {
+            defaultRequest {
+                if (kind == Kind.TCP)
+                    url {
+                        host = "localhost"
+                        protocol = URLProtocol.HTTP
+                        port = this@GradleTaskRunningTest.port
+                    }
+                else {
+                    url {
+                        host = "localhost"
+                        protocol = URLProtocol.HTTP
+                    }
+                    unixSocket(unixSocketPath)
+                }
+            }
+        }
+    }
+
+    private fun startRunner() = thread(start = true) {
+        GradleRunner.create().withProjectDir(projectDir).withPluginClasspath().withArguments(
+            ":spotlessDaemon",
+            if (kind == Kind.UNIX)
+                "-Pdev.ghostflyby.spotless.daemon.unixsocket=$unixSocketPath"
+            else "-Pdev.ghostflyby.spotless.daemon.port=$port",
+        ).forwardOutput().build()
     }
 
 
@@ -73,19 +100,11 @@ class GradleTaskRunningTest(@param:TempDir val projectDir: File) {
         assertEquals(TaskOutcome.FAILED, outcome, "Should fail when neither port nor unixSocket set")
     }
 
-    /**
-     * @see [SpotlessDaemonTask.port]
-     */
     @Test
     @Timeout(10)
-    fun `run with port config`(): Unit =
+    fun `health check`(): Unit =
         runBlocking {
-            val t = thread(start = true) {
-                GradleRunner.create().withProjectDir(projectDir).withPluginClasspath().withArguments(
-                    ":spotlessDaemon",
-                    "-Pdev.ghostflyby.spotless.daemon.port=$port",
-                ).forwardOutput().build()
-            }
+            val t = startRunner()
 
             delay(3.seconds)
 
