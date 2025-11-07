@@ -79,6 +79,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
 
 
     private fun startRunner() = thread(start = true) {
+        println("$projectDir exist: ${projectDir.exists()}, isDir: ${projectDir.isDirectory}")
         try {
 
             GradleRunner.create().withProjectDir(projectDir).withPluginClasspath().withArguments(
