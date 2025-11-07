@@ -35,6 +35,21 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
 
     val start: TimeMark = TimeSource.Monotonic.markNow()
 
+    val buildFile: File = projectDir.resolve("build.gradle.kts")
+
+    init {
+        buildFile.createNewFile()
+        buildFile.writeText(
+            """
+            plugins {
+                id("com.diffplug.spotless")
+                id("dev.ghostflyby.spotless.daemon")
+            }
+            
+            """.trimIndent(),
+        )
+    }
+
     /**
      * @see [SpotlessDaemonTask.port]
      * @see [SpotlessDaemonTask.unixsocket]
@@ -69,17 +84,6 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
 
 
     private fun startRunner() = thread(start = true) {
-        val buildFile = projectDir.resolve("build.gradle.kts")
-        buildFile.writeText(
-            """
-            plugins {
-                id("com.diffplug.spotless")
-                id("dev.ghostflyby.spotless.daemon")
-            }
-            
-            """.trimIndent(),
-        )
-        println("${start.elapsedNow()}: Before Start: $buildFile exist: ${buildFile.exists()}, isRegular: ${buildFile.isFile}")
         println("${start.elapsedNow()}: Before Start: $projectDir exist: ${projectDir.exists()}, isDir: ${projectDir.isDirectory}")
         println(buildFile.readText())
         try {
@@ -107,16 +111,6 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
      */
     @Test
     fun `run without host config`() {
-        val buildFile = projectDir.resolve("build.gradle.kts")
-        buildFile.writeText(
-            """
-            plugins {
-                id("com.diffplug.spotless")
-                id("dev.ghostflyby.spotless.daemon")
-            }
-            
-            """.trimIndent(),
-        )
         val result: BuildResult = GradleRunner.create().withProjectDir(projectDir).withPluginClasspath()
             .withArguments(SpotlessDaemon.SPOTLESS_DAEMON_TASK_NAME).buildAndFail()
         val outcome = result.task(":${SpotlessDaemon.SPOTLESS_DAEMON_TASK_NAME}")?.outcome
