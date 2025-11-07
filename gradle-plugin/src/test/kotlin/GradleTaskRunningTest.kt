@@ -81,6 +81,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
         )
         println("${start.elapsedNow()}: Before Start: $buildFile exist: ${buildFile.exists()}, isRegular: ${buildFile.isFile}")
         println("${start.elapsedNow()}: Before Start: $projectDir exist: ${projectDir.exists()}, isDir: ${projectDir.isDirectory}")
+        println(buildFile.readText())
         try {
 
             GradleRunner.create().withProjectDir(projectDir).withPluginClasspath().withArguments(
@@ -92,6 +93,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
             e.printStackTrace()
             println("${start.elapsedNow()}: After Failed: $buildFile exist: ${buildFile.exists()}, isRegular: ${buildFile.isFile}")
             println("${start.elapsedNow()}: After Failed: $projectDir exist: ${projectDir.exists()}, isDir: ${projectDir.isDirectory}")
+            println(buildFile.readText())
         }
     }
 
