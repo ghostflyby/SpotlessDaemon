@@ -125,7 +125,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
 
         try {
 
-            delay(16.seconds)
+            delay(6.seconds)
 
             println("${start.elapsedNow()}: Before Request: $projectDir exist: ${projectDir.exists()}, isDir: ${projectDir.isDirectory}")
             val response = http.get("")
