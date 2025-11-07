@@ -8,6 +8,7 @@ import dev.ghostflyby.spotless.daemon.SpotlessDaemonTask
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.*
+import io.ktor.client.request.*
 import io.ktor.http.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -80,7 +81,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
     private fun startRunner() = thread(start = true) {
 
         GradleRunner.create().withProjectDir(projectDir).withPluginClasspath().withArguments(
-            "spotlessApply",
+            "spotlessDaemon",
             if (kind == Kind.UNIX)
                 "-Pdev.ghostflyby.spotless.daemon.unixsocket=$unixSocketPath"
             else "-Pdev.ghostflyby.spotless.daemon.port=$port",
@@ -110,11 +111,11 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
             delay(3.seconds)
 
             try {
-//                val response = http.get("")
-//                assertEquals(HttpStatusCode.OK, response.status, "Should respond with 200 OK")
-//
-//                val stop = http.post("/stop")
-//                assertEquals(HttpStatusCode.OK, stop.status, "Should stop successfully")
+                val response = http.get("")
+                assertEquals(HttpStatusCode.OK, response.status, "Should respond with 200 OK")
+
+                val stop = http.post("/stop")
+                assertEquals(HttpStatusCode.OK, stop.status, "Should stop successfully")
             } catch (e: Exception) {
                 e.printStackTrace()
             } finally {
