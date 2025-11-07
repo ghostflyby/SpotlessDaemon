@@ -16,6 +16,7 @@ import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.io.TempDir
@@ -35,9 +36,9 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
 
     val start: TimeMark = TimeSource.Monotonic.markNow()
 
-    init {
-        projectDir.mkdirs()
-        val buildFile = projectDir.resolve("build.gradle.kts")
+    @BeforeEach
+    fun setup() {
+        val buildFile = projectDir.resolve("/build.gradle.kts")
         buildFile.createNewFile()
         buildFile.writeText(
             """
