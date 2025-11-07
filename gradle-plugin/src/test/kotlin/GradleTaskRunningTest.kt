@@ -88,7 +88,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
                 "spotlessDaemon",
                 if (kind == Kind.UNIX) "-Pdev.ghostflyby.spotless.daemon.unixsocket=$unixSocketPath"
                 else "-Pdev.ghostflyby.spotless.daemon.port=$port",
-                "--Porg.gradle.jvmargs=-XX:-MaxFDLimit",
+                "-Porg.gradle.jvmargs=-XX:-MaxFDLimit",
                 "--stacktrace",
                 "--info",
             ).forwardOutput().build()
