@@ -79,13 +79,18 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
 
 
     private fun startRunner() = thread(start = true) {
+        try {
 
-        GradleRunner.create().withProjectDir(projectDir).withPluginClasspath().withArguments(
-            "spotlessDaemon",
-            if (kind == Kind.UNIX)
-                "-Pdev.ghostflyby.spotless.daemon.unixsocket=$unixSocketPath"
-            else "-Pdev.ghostflyby.spotless.daemon.port=$port",
-        ).forwardOutput().build()
+            GradleRunner.create().withProjectDir(projectDir).withPluginClasspath().withArguments(
+                "spotlessDaemon",
+                if (kind == Kind.UNIX)
+                    "-Pdev.ghostflyby.spotless.daemon.unixsocket=$unixSocketPath"
+                else "-Pdev.ghostflyby.spotless.daemon.port=$port",
+            ).forwardOutput().build()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            println("$projectDir exist: ${projectDir.exists()}, isDir: ${projectDir.isDirectory}")
+        }
     }
 
 
@@ -110,17 +115,8 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
 
             delay(3.seconds)
 
-            try {
-                val response = http.get("")
-                assertEquals(HttpStatusCode.OK, response.status, "Should respond with 200 OK")
-
-                val stop = http.post("/stop")
-                assertEquals(HttpStatusCode.OK, stop.status, "Should stop successfully")
-            } catch (e: Exception) {
-                e.printStackTrace()
-            } finally {
-                println("$projectDir exist: ${projectDir.exists()}, isDir: ${projectDir.isDirectory}")
-            }
+            val response = http.get("")
+            assertEquals(HttpStatusCode.OK, response.status, "Should respond with 200 OK")
 
 
             t.join()
