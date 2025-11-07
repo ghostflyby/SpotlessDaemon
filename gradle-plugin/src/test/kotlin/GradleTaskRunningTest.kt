@@ -36,7 +36,9 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
     val start: TimeMark = TimeSource.Monotonic.markNow()
 
     init {
+        projectDir.mkdirs()
         val buildFile = projectDir.resolve("build.gradle.kts")
+        buildFile.createNewFile()
         buildFile.writeText(
             """
             plugins {
