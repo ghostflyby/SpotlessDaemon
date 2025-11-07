@@ -18,19 +18,17 @@ import org.gradle.testkit.runner.TaskOutcome
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
+import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedClass
 import org.junit.jupiter.params.provider.EnumSource
 import java.io.File
-import java.nio.file.Files
 import kotlin.concurrent.thread
 import kotlin.time.Duration.Companion.seconds
 
 
 @ParameterizedClass
 @EnumSource(GradleTaskRunningTest.Kind::class)
-class GradleTaskRunningTest(val kind: Kind) {
-
-    val projectDir: File = Files.createTempDirectory("gradle").toFile().apply { deleteOnExit() }
+class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File) {
 
 
     init {
@@ -110,7 +108,7 @@ class GradleTaskRunningTest(val kind: Kind) {
         runBlocking {
             val t = startRunner()
 
-            delay(6.seconds)
+            delay(3.seconds)
 
             val response = http.get("")
             assertEquals(HttpStatusCode.OK, response.status, "Should respond with 200 OK")
