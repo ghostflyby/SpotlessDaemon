@@ -79,6 +79,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
             
             """.trimIndent(),
         )
+        println("${start.elapsedNow()}: Before Start: $buildFile exist: ${buildFile.exists()}, isRegular: ${buildFile.isFile}")
         println("${start.elapsedNow()}: Before Start: $projectDir exist: ${projectDir.exists()}, isDir: ${projectDir.isDirectory}")
         try {
 
@@ -89,6 +90,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
             ).forwardOutput().build()
         } catch (e: Exception) {
             e.printStackTrace()
+            println("${start.elapsedNow()}: After Failed: $buildFile exist: ${buildFile.exists()}, isRegular: ${buildFile.isFile}")
             println("${start.elapsedNow()}: After Failed: $projectDir exist: ${projectDir.exists()}, isDir: ${projectDir.isDirectory}")
         }
     }
