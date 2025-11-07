@@ -79,7 +79,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
 
 
     private fun startRunner() = thread(start = true) {
-        println("$projectDir exist: ${projectDir.exists()}, isDir: ${projectDir.isDirectory}")
+        println("Before Start: $projectDir exist: ${projectDir.exists()}, isDir: ${projectDir.isDirectory}")
         try {
 
             GradleRunner.create().withProjectDir(projectDir).withPluginClasspath().withArguments(
@@ -90,7 +90,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
             ).forwardOutput().build()
         } catch (e: Exception) {
             e.printStackTrace()
-            println("$projectDir exist: ${projectDir.exists()}, isDir: ${projectDir.isDirectory}")
+            println("After Failed: $projectDir exist: ${projectDir.exists()}, isDir: ${projectDir.isDirectory}")
         }
     }
 
@@ -116,9 +116,12 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
 
             delay(3.seconds)
 
+            println("Before Request: $projectDir exist: ${projectDir.exists()}, isDir: ${projectDir.isDirectory}")
             val response = http.get("")
             assertEquals(HttpStatusCode.OK, response.status, "Should respond with 200 OK")
 
+            val stop = http.post("/stop")
+            assertEquals(HttpStatusCode.OK, stop.status, "Should respond with 200 OK on stop")
 
             t.join()
         }
