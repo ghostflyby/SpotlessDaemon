@@ -23,7 +23,6 @@ import org.junit.jupiter.params.ParameterizedClass
 import org.junit.jupiter.params.provider.EnumSource
 import java.io.ByteArrayOutputStream
 import java.io.File
-import java.nio.file.Files
 import kotlin.concurrent.thread
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeMark
@@ -86,13 +85,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
 
 
     private fun startRunner() = thread(start = true) {
-        Files.getPosixFilePermissions(projectDir.toPath()).forEach {
-            println("Permission: $it")
-        }
         println("${start.elapsedNow()}: Before Start: $projectDir exist: ${projectDir.exists()}, isDir: ${projectDir.isDirectory}")
-        Files.getPosixFilePermissions(buildFile.toPath()).forEach {
-            println("Permission: $it")
-        }
         println(buildFile.readText())
         try {
 
