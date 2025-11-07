@@ -17,6 +17,7 @@ import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedClass
 import org.junit.jupiter.params.provider.EnumSource
@@ -101,6 +102,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
     }
 
     @Test
+    @Timeout(20)
     fun `health check`() {
         val t = thread(start = true) {
             runBlocking {
