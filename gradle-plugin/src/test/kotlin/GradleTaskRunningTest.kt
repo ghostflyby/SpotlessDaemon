@@ -92,7 +92,6 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
             ).forwardOutput().build()
         } catch (e: Exception) {
             e.printStackTrace()
-        } finally {
             println("${start.elapsedNow()}: After Failed: $projectDir exist: ${projectDir.exists()}, isDir: ${projectDir.isDirectory}")
         }
     }
