@@ -113,13 +113,15 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
             try {
                 val response = http.get("")
                 assertEquals(HttpStatusCode.OK, response.status, "Should respond with 200 OK")
+
+                val stop = http.post("/stop")
+                assertEquals(HttpStatusCode.OK, stop.status, "Should stop successfully")
             } catch (e: Exception) {
                 e.printStackTrace()
+            } finally {
                 println("$projectDir exist: ${projectDir.exists()}, isDir: ${projectDir.isDirectory}")
             }
 
-            val stop = http.post("/stop")
-            assertEquals(HttpStatusCode.OK, stop.status, "Should stop successfully")
 
             t.join()
         }
