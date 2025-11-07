@@ -90,7 +90,6 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
                 else "-Pdev.ghostflyby.spotless.daemon.port=$port",
                 "-Porg.gradle.jvmargs=-XX:-MaxFDLimit",
                 "--stacktrace",
-                "--info",
             ).forwardOutput().build()
         } catch (e: Exception) {
             e.printStackTrace()
