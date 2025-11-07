@@ -21,7 +21,9 @@ import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedClass
 import org.junit.jupiter.params.provider.EnumSource
+import java.io.ByteArrayOutputStream
 import java.io.File
+import java.nio.file.Files
 import kotlin.concurrent.thread
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeMark
@@ -84,7 +86,13 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
 
 
     private fun startRunner() = thread(start = true) {
+        Files.getPosixFilePermissions(projectDir.toPath()).forEach {
+            println("Permission: $it")
+        }
         println("${start.elapsedNow()}: Before Start: $projectDir exist: ${projectDir.exists()}, isDir: ${projectDir.isDirectory}")
+        Files.getPosixFilePermissions(buildFile.toPath()).forEach {
+            println("Permission: $it")
+        }
         println(buildFile.readText())
         try {
 
@@ -111,11 +119,16 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
      */
     @Test
     fun `run without host config`() {
+        val s = ByteArrayOutputStream()
         val result: BuildResult = GradleRunner.create().withProjectDir(projectDir).withPluginClasspath()
+            .forwardStdError(s.bufferedWriter())
             .withArguments(SpotlessDaemon.SPOTLESS_DAEMON_TASK_NAME).buildAndFail()
         val outcome = result.task(":${SpotlessDaemon.SPOTLESS_DAEMON_TASK_NAME}")?.outcome
 
         assertEquals(TaskOutcome.FAILED, outcome, "Should fail when neither port nor unixSocket set")
+
+        val str = s.toString()
+        assertEquals(true, str.contains("Cannot query the value of task ':spotlessDaemon'"), str)
     }
 
     @Test
