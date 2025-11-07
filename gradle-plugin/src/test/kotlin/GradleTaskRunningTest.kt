@@ -78,7 +78,8 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
     }
 
 
-    private fun startRunner() {
+    private fun startRunner() = thread(start = true) {
+
         GradleRunner.create().withProjectDir(projectDir).withPluginClasspath().withArguments(
             "spotlessDaemon",
             if (kind == Kind.UNIX)
@@ -103,20 +104,19 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
 
     @Test
     @Timeout(20)
-    fun `health check`() {
-        val t = thread(start = true) {
-            runBlocking {
-                delay(6.seconds)
-                val response = http.get("")
-                assertEquals(HttpStatusCode.OK, response.status, "Should respond with 200 OK")
+    fun `health check`(): Unit =
+        runBlocking {
+            val t = startRunner()
 
-                val stop = http.post("/stop")
-                assertEquals(HttpStatusCode.OK, stop.status, "Should stop successfully")
-            }
+            delay(3.seconds)
+
+            val response = http.get("")
+            assertEquals(HttpStatusCode.OK, response.status, "Should respond with 200 OK")
+
+            val stop = http.post("/stop")
+            assertEquals(HttpStatusCode.OK, stop.status, "Should stop successfully")
+
+            t.join()
         }
-
-        startRunner()
-        t.join()
-    }
 }
 
