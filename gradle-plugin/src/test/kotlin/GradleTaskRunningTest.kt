@@ -24,12 +24,16 @@ import org.junit.jupiter.params.provider.EnumSource
 import java.io.File
 import kotlin.concurrent.thread
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeMark
+import kotlin.time.TimeSource
 
 
 @ParameterizedClass
 @EnumSource(GradleTaskRunningTest.Kind::class)
 class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File) {
 
+
+    val start: TimeMark = TimeSource.Monotonic.markNow()
 
     init {
         val buildFile = projectDir.resolve("build.gradle.kts")
@@ -79,7 +83,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
 
 
     private fun startRunner() = thread(start = true) {
-        println("Before Start: $projectDir exist: ${projectDir.exists()}, isDir: ${projectDir.isDirectory}")
+        println("${start.elapsedNow()}: Before Start: $projectDir exist: ${projectDir.exists()}, isDir: ${projectDir.isDirectory}")
         try {
 
             GradleRunner.create().withProjectDir(projectDir).withPluginClasspath().withArguments(
@@ -90,7 +94,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
             ).forwardOutput().build()
         } catch (e: Exception) {
             e.printStackTrace()
-            println("After Failed: $projectDir exist: ${projectDir.exists()}, isDir: ${projectDir.isDirectory}")
+            println("${start.elapsedNow()}: After Failed: $projectDir exist: ${projectDir.exists()}, isDir: ${projectDir.isDirectory}")
         }
     }
 
@@ -116,7 +120,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
 
             delay(12.seconds)
 
-            println("Before Request: $projectDir exist: ${projectDir.exists()}, isDir: ${projectDir.isDirectory}")
+            println("${start.elapsedNow()}: Before Request: $projectDir exist: ${projectDir.exists()}, isDir: ${projectDir.isDirectory}")
             val response = http.get("")
             assertEquals(HttpStatusCode.OK, response.status, "Should respond with 200 OK")
 
