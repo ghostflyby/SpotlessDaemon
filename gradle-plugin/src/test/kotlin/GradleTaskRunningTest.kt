@@ -31,6 +31,19 @@ import kotlin.time.Duration.Companion.seconds
 class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File) {
 
 
+    init {
+        val buildFile = projectDir.resolve("build.gradle.kts")
+        buildFile.writeText(
+            """
+            plugins {
+                id("com.diffplug.spotless")
+                id("dev.ghostflyby.spotless.daemon")
+            }
+            
+            """.trimIndent(),
+        )
+    }
+
     /**
      * @see [SpotlessDaemonTask.port]
      * @see [SpotlessDaemonTask.unixsocket]
@@ -67,16 +80,6 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
 
     private fun startRunner() = thread(start = true) {
         println("Before Start: $projectDir exist: ${projectDir.exists()}, isDir: ${projectDir.isDirectory}")
-        val buildFile = projectDir.resolve("build.gradle.kts")
-        buildFile.writeText(
-            """
-            plugins {
-                id("com.diffplug.spotless")
-                id("dev.ghostflyby.spotless.daemon")
-            }
-            
-            """.trimIndent(),
-        )
         try {
 
             GradleRunner.create().withProjectDir(projectDir).withPluginClasspath().withArguments(
@@ -98,16 +101,6 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
      */
     @Test
     fun `run without host config`() {
-        val buildFile = projectDir.resolve("build.gradle.kts")
-        buildFile.writeText(
-            """
-            plugins {
-                id("com.diffplug.spotless")
-                id("dev.ghostflyby.spotless.daemon")
-            }
-            
-            """.trimIndent(),
-        )
         val result: BuildResult = GradleRunner.create().withProjectDir(projectDir).withPluginClasspath()
             .withArguments(SpotlessDaemon.SPOTLESS_DAEMON_TASK_NAME).buildAndFail()
         val outcome = result.task(":${SpotlessDaemon.SPOTLESS_DAEMON_TASK_NAME}")?.outcome
