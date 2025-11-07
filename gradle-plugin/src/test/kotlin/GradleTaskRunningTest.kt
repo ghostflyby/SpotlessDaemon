@@ -104,9 +104,10 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
     @Test
     fun `health check`(): Unit =
         runBlocking {
+            delay(3.seconds)
             val t = startRunner()
 
-            delay(24.seconds)
+            delay(3.seconds)
 
             runCatching {
                 val response = http.get("")
