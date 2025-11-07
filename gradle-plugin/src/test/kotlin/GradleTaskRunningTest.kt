@@ -114,7 +114,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
         runBlocking {
             val t = startRunner()
 
-            delay(3.seconds)
+            delay(12.seconds)
 
             println("Before Request: $projectDir exist: ${projectDir.exists()}, isDir: ${projectDir.isDirectory}")
             val response = http.get("")
