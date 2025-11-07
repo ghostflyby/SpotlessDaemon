@@ -28,10 +28,7 @@ jobs:
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
       - name: Build and Check
-        run: |
-          ulimit -n
-          ulimit -n unlimited
-          ./gradlew build
+        run: ./gradlew build
       - name: Upload artifact
         uses: actions/upload-artifact@v5
         with:
