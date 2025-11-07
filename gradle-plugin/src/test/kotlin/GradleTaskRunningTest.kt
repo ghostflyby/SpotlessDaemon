@@ -18,6 +18,7 @@ import org.gradle.testkit.runner.TaskOutcome
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
+import org.junit.jupiter.api.io.CleanupMode
 import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedClass
 import org.junit.jupiter.params.provider.EnumSource
@@ -30,7 +31,7 @@ import kotlin.time.TimeSource
 
 @ParameterizedClass
 @EnumSource(GradleTaskRunningTest.Kind::class)
-class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File) {
+class GradleTaskRunningTest(val kind: Kind, @param:TempDir(cleanup = CleanupMode.NEVER) val projectDir: File) {
 
 
     val start: TimeMark = TimeSource.Monotonic.markNow()
