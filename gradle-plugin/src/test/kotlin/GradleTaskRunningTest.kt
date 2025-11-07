@@ -16,7 +16,6 @@ import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.io.TempDir
@@ -35,21 +34,6 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
 
 
     val start: TimeMark = TimeSource.Monotonic.markNow()
-
-    @BeforeEach
-    fun setup() {
-        val buildFile = projectDir.resolve("build.gradle.kts")
-        buildFile.createNewFile()
-        buildFile.writeText(
-            """
-            plugins {
-                id("com.diffplug.spotless")
-                id("dev.ghostflyby.spotless.daemon")
-            }
-            
-            """.trimIndent(),
-        )
-    }
 
     /**
      * @see [SpotlessDaemonTask.port]
@@ -85,6 +69,16 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
 
 
     private fun startRunner() = thread(start = true) {
+        val buildFile = projectDir.resolve("build.gradle.kts")
+        buildFile.writeText(
+            """
+            plugins {
+                id("com.diffplug.spotless")
+                id("dev.ghostflyby.spotless.daemon")
+            }
+            
+            """.trimIndent(),
+        )
         println("${start.elapsedNow()}: Before Start: $projectDir exist: ${projectDir.exists()}, isDir: ${projectDir.isDirectory}")
         try {
 
@@ -106,6 +100,16 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
      */
     @Test
     fun `run without host config`() {
+        val buildFile = projectDir.resolve("build.gradle.kts")
+        buildFile.writeText(
+            """
+            plugins {
+                id("com.diffplug.spotless")
+                id("dev.ghostflyby.spotless.daemon")
+            }
+            
+            """.trimIndent(),
+        )
         val result: BuildResult = GradleRunner.create().withProjectDir(projectDir).withPluginClasspath()
             .withArguments(SpotlessDaemon.SPOTLESS_DAEMON_TASK_NAME).buildAndFail()
         val outcome = result.task(":${SpotlessDaemon.SPOTLESS_DAEMON_TASK_NAME}")?.outcome
