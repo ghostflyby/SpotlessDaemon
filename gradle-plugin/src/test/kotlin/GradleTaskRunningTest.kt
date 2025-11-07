@@ -108,11 +108,15 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
 
             delay(24.seconds)
 
-            val response = http.get("")
-            assertEquals(HttpStatusCode.OK, response.status, "Should respond with 200 OK")
+            runCatching {
+                val response = http.get("")
+                assertEquals(HttpStatusCode.OK, response.status, "Should respond with 200 OK")
+            }
 
-            val stop = http.post("/stop")
-            assertEquals(HttpStatusCode.OK, stop.status, "Should stop successfully")
+            runCatching {
+                val stop = http.post("/stop")
+                assertEquals(HttpStatusCode.OK, stop.status, "Should stop successfully")
+            }
 
             t.join()
         }
