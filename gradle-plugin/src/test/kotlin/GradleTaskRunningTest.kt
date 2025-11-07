@@ -64,12 +64,11 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
     private val http by lazy {
         HttpClient(CIO) {
             defaultRequest {
-                if (kind == Kind.TCP)
-                    url {
-                        host = "127.0.0.1"
-                        protocol = URLProtocol.HTTP
-                        port = this@GradleTaskRunningTest.port
-                    }
+                if (kind == Kind.TCP) url {
+                    host = "127.0.0.1"
+                    protocol = URLProtocol.HTTP
+                    port = this@GradleTaskRunningTest.port
+                }
                 else {
                     url {
                         host = "127.0.0.1"
@@ -88,8 +87,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
 
             GradleRunner.create().withProjectDir(projectDir).withPluginClasspath().withArguments(
                 "spotlessDaemon",
-                if (kind == Kind.UNIX)
-                    "-Pdev.ghostflyby.spotless.daemon.unixsocket=$unixSocketPath"
+                if (kind == Kind.UNIX) "-Pdev.ghostflyby.spotless.daemon.unixsocket=$unixSocketPath"
                 else "-Pdev.ghostflyby.spotless.daemon.port=$port",
             ).forwardOutput().build()
         } catch (e: Exception) {
@@ -114,9 +112,10 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
 
     @Test
     @Timeout(20)
-    fun `health check`(): Unit =
-        runBlocking {
-            val t = startRunner()
+    fun `health check`(): Unit = runBlocking {
+        val t = startRunner()
+
+        try {
 
             delay(16.seconds)
 
@@ -126,8 +125,12 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
 
             val stop = http.post("/stop")
             assertEquals(HttpStatusCode.OK, stop.status, "Should respond with 200 OK on stop")
-
-            t.join()
+        } catch (e: Throwable) {
+            e.printStackTrace()
+            t.interrupt()
+            throw e
         }
+        t.join()
+    }
 }
 
