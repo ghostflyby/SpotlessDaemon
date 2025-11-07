@@ -38,7 +38,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
 
     @BeforeEach
     fun setup() {
-        val buildFile = projectDir.resolve("/build.gradle.kts")
+        val buildFile = projectDir.resolve("build.gradle.kts")
         buildFile.createNewFile()
         buildFile.writeText(
             """
