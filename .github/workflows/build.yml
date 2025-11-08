@@ -67,7 +67,7 @@ jobs:
           name: artifacts
           path: ${{ github.workspace }}/*/build/libs/*.jar
       - name: Collect Tests Result
-        if: ${{ failure() }}
+        if: ${{ always() }}
         uses: actions/upload-artifact@v5
         with:
           name: tests-result
