@@ -30,16 +30,16 @@ jobs:
       - name: Build and Check
         run: |
           (
-          sleep 60
+          sleep 30
           jdb -attach 5005 << EOF
           stop at org.gradle.internal.resource.UriTextResource:154
           cont
-          print e
+          print $exception
           quit
           EOF
           ) &
-          export JAVA_OPTS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"
-          ./gradlew build
+          export ORG_GRADLE_JVMARGS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005"
+          ./gradlew build --no-daemon
       - name: Upload artifact
         uses: actions/upload-artifact@v5
         with:
