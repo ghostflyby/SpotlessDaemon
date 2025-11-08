@@ -31,7 +31,7 @@ jobs:
         run: |
           (
           expect -f - <<'EOF'
-              set timeout 120
+              set timeout -1
           
               spawn jdb -listen 5005
           
