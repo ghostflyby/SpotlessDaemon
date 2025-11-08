@@ -25,6 +25,7 @@ import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.concurrent.thread
+import kotlin.io.path.Path
 import kotlin.io.path.appendText
 import kotlin.io.path.div
 import kotlin.time.Duration.Companion.seconds
@@ -41,7 +42,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir var projectDir: Path)
     init {
         val runnerTmp = System.getenv("RUNNER_TEMP")
         if (runnerTmp != null) {
-            projectDir = Files.createTempDirectory(runnerTmp)
+            projectDir = Files.createTempDirectory(Path(runnerTmp), "spd-test")
             buildFile = projectDir / "build.gradle.kts"
         }
         Files.createFile(buildFile)
