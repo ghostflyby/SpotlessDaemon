@@ -95,7 +95,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
                 else "-Pdev.ghostflyby.spotless.daemon.port=$port",
                 "--stacktrace",
                 "--info",
-            ).build()
+            ).forwardOutput().build()
         } catch (e: Exception) {
             e.printStackTrace()
             println("${start.elapsedNow()}: After Failed: $buildFile exist: ${buildFile.exists()}, isRegular: ${buildFile.isFile}")
