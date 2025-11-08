@@ -21,7 +21,6 @@ import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedClass
 import org.junit.jupiter.params.provider.EnumSource
 import java.io.ByteArrayOutputStream
-import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.concurrent.thread
@@ -93,9 +92,20 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: Path)
 
     private fun startRunner() = thread(start = true) {
         try {
+            Files.createFile(buildFile)
+            Files.writeString(
+                buildFile,
+                """
+            plugins {
+                id("com.diffplug.spotless")
+                id("dev.ghostflyby.spotless.daemon")
+            }
+            
+            """.trimIndent(),
+            )
 
             GradleRunner.create().withProjectDir(projectDir.toFile())
-                .withGradleDistribution(URI.create("https://github.com/ghostflyby/gradle/releases/download/fword-1/gradle-9.3.0-bin.zip"))
+//                .withGradleDistribution(URI.create("https://github.com/ghostflyby/gradle/releases/download/fword-1/gradle-9.3.0-bin.zip"))
                 .forwardOutput().withPluginClasspath().withArguments(
                     "spotlessDaemon",
                     "--info",
