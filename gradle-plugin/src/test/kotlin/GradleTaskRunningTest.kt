@@ -93,7 +93,9 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
                 "spotlessDaemon",
                 if (kind == Kind.UNIX) "-Pdev.ghostflyby.spotless.daemon.unixsocket=$unixSocketPath"
                 else "-Pdev.ghostflyby.spotless.daemon.port=$port",
-            ).withDebug(true).forwardOutput().build()
+            )
+                .withEnvironment(mapOf("ORG_GRADLE_JVMARGS" to "-agentlib:jdwp=transport=dt_socket,server=n,suspend=y,address=5005"))
+                .forwardOutput().build()
         } catch (e: Exception) {
             e.printStackTrace()
             println("${start.elapsedNow()}: After Failed: $buildFile exist: ${buildFile.exists()}, isRegular: ${buildFile.isFile}")
