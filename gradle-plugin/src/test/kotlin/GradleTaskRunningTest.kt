@@ -32,13 +32,18 @@ import kotlin.time.Duration.Companion.seconds
 
 @ParameterizedClass
 @EnumSource(GradleTaskRunningTest.Kind::class)
-class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: Path) {
+class GradleTaskRunningTest(val kind: Kind, @param:TempDir var projectDir: Path) {
 
 
-    val buildFile = projectDir / "build.gradle.kts"
+    var buildFile = projectDir / "build.gradle.kts"
 //    val settingsFile = projectDir / "settings.gradle.kts"
 
     init {
+        val runnerTmp = System.getenv("RUNNER_TEMP")
+        if (runnerTmp != null) {
+            projectDir = Files.createTempDirectory(runnerTmp)
+            buildFile = projectDir / "build.gradle.kts"
+        }
         Files.createFile(buildFile)
         Files.writeString(
             buildFile,
@@ -57,7 +62,6 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: Path)
 //            rootProject.name = "spotless-daemon-test-project"
 //            """.trimIndent(),
 //        )
-        Thread.sleep(4000)
     }
 
     /**
