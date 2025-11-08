@@ -96,7 +96,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
                 "--no-daemon",
             ).withEnvironment(
                 mapOf(
-                    "ORG_GRADLE_JVMARGS" to "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005",
+                    "ORG_GRADLE_JVMARGS" to "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=127.0.0.1:5005",
                 ),
             ).forwardOutput().build()
         } catch (e: Exception) {
