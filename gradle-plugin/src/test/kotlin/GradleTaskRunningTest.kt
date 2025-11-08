@@ -35,7 +35,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: Path)
 
 
     val buildFile = projectDir / "build.gradle.kts"
-    val settingsFile = projectDir / "settings.gradle.kts"
+//    val settingsFile = projectDir / "settings.gradle.kts"
 
     init {
         Files.createFile(buildFile)
@@ -49,13 +49,13 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: Path)
             
             """.trimIndent(),
         )
-        Files.createFile(settingsFile)
-        Files.writeString(
-            settingsFile,
-            """
-            rootProject.name = "spotless-daemon-test-project"
-            """.trimIndent(),
-        )
+//        Files.createFile(settingsFile)
+//        Files.writeString(
+//            settingsFile,
+//            """
+//            rootProject.name = "spotless-daemon-test-project"
+//            """.trimIndent(),
+//        )
     }
 
     /**
