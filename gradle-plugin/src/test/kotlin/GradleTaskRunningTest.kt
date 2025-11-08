@@ -94,7 +94,6 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
                 "--stacktrace",
                 if (kind == Kind.UNIX) "-Pdev.ghostflyby.spotless.daemon.unixsocket=$unixSocketPath"
                 else "-Pdev.ghostflyby.spotless.daemon.port=$port",
-                "-Dorg.gradle.jvmargs=-agentlib:jdwp=transport=dt_socket,server=n,suspend=y,address=5005",
             ).build()
         } catch (e: Exception) {
             e.printStackTrace()
@@ -130,7 +129,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
 
         try {
 
-            delay(120.seconds)
+            delay(20.seconds)
 
             println("${start.elapsedNow()}: Before Request: $projectDir exist: ${projectDir.exists()}, isDir: ${projectDir.isDirectory}, writable: ${projectDir.canWrite()}")
             val response = http.get("")
