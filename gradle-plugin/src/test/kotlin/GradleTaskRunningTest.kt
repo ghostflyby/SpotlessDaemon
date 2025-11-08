@@ -88,14 +88,14 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
         println(buildFile.readText())
         try {
 
-            GradleRunner.create().withProjectDir(projectDir).withPluginClasspath().withArguments(
+            GradleRunner.create().withProjectDir(projectDir).forwardOutput().withPluginClasspath().withArguments(
                 "spotlessDaemon",
-                "-Dorg.gradle.jvmargs=-agentlib:jdwp=transport=dt_socket,server=n,suspend=y,address=5005",
+                "--info",
+                "--stacktrace",
                 if (kind == Kind.UNIX) "-Pdev.ghostflyby.spotless.daemon.unixsocket=$unixSocketPath"
                 else "-Pdev.ghostflyby.spotless.daemon.port=$port",
-                "--stacktrace",
-                "--info",
-            ).forwardOutput().build()
+                "-Dorg.gradle.jvmargs=-agentlib:jdwp=transport=dt_socket,server=n,suspend=y,address=5005",
+            ).build()
         } catch (e: Exception) {
             e.printStackTrace()
             println("${start.elapsedNow()}: After Failed: $buildFile exist: ${buildFile.exists()}, isRegular: ${buildFile.isFile}, canRead: ${buildFile.canRead()}")
