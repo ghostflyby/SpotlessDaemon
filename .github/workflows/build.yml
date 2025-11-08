@@ -37,7 +37,7 @@ jobs:
           quit
           EOF
           ) &
-          export ORG_GRADLE_JVMARGS="-agentlib:jdwp=transport=dt_socket,server=n,suspend=y,address=127.0.0.1:5005"
+          export ORG_GRADLE_JVMARGS="-agentlib:jdwp=transport=dt_socket,server=n,suspend=y,address=5005"
           ./gradlew build --no-daemon
       - name: Upload artifact
         uses: actions/upload-artifact@v5
