@@ -30,11 +30,34 @@ jobs:
       - name: Build and Check
         run: |
           (
-          jdb -listen 5005 << EOF
-          stop at org.gradle.internal.resource.UriTextResource:154
-          cont
-          print e
-          quit
+          expect -f - <<'EOF'
+              set timeout 120
+          
+              spawn jdb -listen 5005
+          
+              expect {
+                  -re "Listening" {}
+                  -re "Initializing jdb" {}
+              }
+          
+              send "stop at org.gradle.internal.resource.UriTextResource:154\r"
+              send "cont\r"
+          
+              expect {
+                  -re "Breakpoint hit:" {
+                      send "print e\r"
+                      expect -re "\r\n"
+                      send "print e.getMessage()\r"
+                      expect -re "\r\n"
+                      send "quit\r"
+                  }
+                  timeout {
+                      puts "Timeout waiting for breakpoint"
+                      send "quit\r"
+                  }
+              }
+          
+              expect eof
           EOF
           ) &
           ./gradlew build
