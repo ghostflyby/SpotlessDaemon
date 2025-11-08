@@ -30,7 +30,7 @@ jobs:
       - name: Build and Check
         run: |
           (
-          sleep 75
+          sleep 4
           jdb -attach 5005 << EOF
           stop at org.gradle.internal.resource.UriTextResource:154
           cont
@@ -38,7 +38,7 @@ jobs:
           quit
           EOF
           ) &
-          
+          export JAVA_OPTS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"
           ./gradlew build
       - name: Upload artifact
         uses: actions/upload-artifact@v5
