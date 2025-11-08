@@ -50,6 +50,12 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: Path)
             """.trimIndent(),
         )
         Files.createFile(settingsFile)
+        Files.writeString(
+            settingsFile,
+            """
+            rootProject.name = "spotless-daemon-test-project"
+            """.trimIndent(),
+        )
     }
 
     /**
