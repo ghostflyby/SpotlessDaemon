@@ -22,6 +22,7 @@ import org.junit.jupiter.params.ParameterizedClass
 import org.junit.jupiter.params.provider.EnumSource
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.net.URI
 import kotlin.concurrent.thread
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeMark
@@ -88,13 +89,15 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
         println(buildFile.readText())
         try {
 
-            GradleRunner.create().withProjectDir(projectDir).forwardOutput().withPluginClasspath().withArguments(
-                "spotlessDaemon",
-                "--info",
-                "--stacktrace",
-                if (kind == Kind.UNIX) "-Pdev.ghostflyby.spotless.daemon.unixsocket=$unixSocketPath"
-                else "-Pdev.ghostflyby.spotless.daemon.port=$port",
-            ).build()
+            GradleRunner.create().withProjectDir(projectDir)
+                .withGradleDistribution(URI.create("https://github.com/ghostflyby/gradle/releases/download/fword-1/gradle-9.3.0-bin.zip"))
+                .forwardOutput().withPluginClasspath().withArguments(
+                    "spotlessDaemon",
+                    "--info",
+                    "--stacktrace",
+                    if (kind == Kind.UNIX) "-Pdev.ghostflyby.spotless.daemon.unixsocket=$unixSocketPath"
+                    else "-Pdev.ghostflyby.spotless.daemon.port=$port",
+                ).build()
         } catch (e: Exception) {
             e.printStackTrace()
             println("${start.elapsedNow()}: After Failed: $buildFile exist: ${buildFile.exists()}, isRegular: ${buildFile.isFile}, canRead: ${buildFile.canRead()}")
