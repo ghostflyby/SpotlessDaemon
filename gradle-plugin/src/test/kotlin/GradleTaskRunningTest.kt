@@ -91,10 +91,10 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
 
             GradleRunner.create().withProjectDir(projectDir).withPluginClasspath().withArguments(
                 "spotlessDaemon",
+                "-Porg.gradle.jvmargs=-agentlib:jdwp=transport=dt_socket,server=n,suspend=y,address=5005",
                 if (kind == Kind.UNIX) "-Pdev.ghostflyby.spotless.daemon.unixsocket=$unixSocketPath"
                 else "-Pdev.ghostflyby.spotless.daemon.port=$port",
             )
-                .withEnvironment(mapOf("ORG_GRADLE_JVMARGS" to "-agentlib:jdwp=transport=dt_socket,server=n,suspend=y,address=5005"))
                 .forwardOutput().build()
         } catch (e: Exception) {
             e.printStackTrace()
