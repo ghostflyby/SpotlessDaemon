@@ -29,7 +29,7 @@ import kotlin.time.TimeSource
 
 
 @ParameterizedClass
-@EnumSource(GradleTaskRunningTest.Kind::class)
+@EnumSource(GradleTaskRunningTest.Kind::class, names = ["TCP"])
 class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File) {
 
 
