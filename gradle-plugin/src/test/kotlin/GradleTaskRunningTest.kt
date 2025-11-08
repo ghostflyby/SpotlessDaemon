@@ -57,6 +57,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: Path)
 //            rootProject.name = "spotless-daemon-test-project"
 //            """.trimIndent(),
 //        )
+        Thread.sleep(4000)
     }
 
     /**
