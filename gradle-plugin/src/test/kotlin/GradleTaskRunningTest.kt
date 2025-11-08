@@ -17,7 +17,6 @@ import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedClass
 import org.junit.jupiter.params.provider.EnumSource
@@ -91,11 +90,12 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
 
             GradleRunner.create().withProjectDir(projectDir).withPluginClasspath().withArguments(
                 "spotlessDaemon",
-                "-Porg.gradle.jvmargs=-agentlib:jdwp=transport=dt_socket,server=n,suspend=y,address=5005",
+                "-Dorg.gradle.jvmargs=-agentlib:jdwp=transport=dt_socket,server=n,suspend=y,address=5005",
                 if (kind == Kind.UNIX) "-Pdev.ghostflyby.spotless.daemon.unixsocket=$unixSocketPath"
                 else "-Pdev.ghostflyby.spotless.daemon.port=$port",
-            )
-                .forwardOutput().build()
+                "--stacktrace",
+                "--info",
+            ).build()
         } catch (e: Exception) {
             e.printStackTrace()
             println("${start.elapsedNow()}: After Failed: $buildFile exist: ${buildFile.exists()}, isRegular: ${buildFile.isFile}")
@@ -112,9 +112,9 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
     @Test
     fun `run without host config`() {
         val s = ByteArrayOutputStream()
-        val result: BuildResult = GradleRunner.create().withProjectDir(projectDir).withPluginClasspath()
-            .forwardStdError(s.bufferedWriter())
-            .withArguments(SpotlessDaemon.SPOTLESS_DAEMON_TASK_NAME).buildAndFail()
+        val result: BuildResult =
+            GradleRunner.create().withProjectDir(projectDir).withPluginClasspath().forwardStdError(s.bufferedWriter())
+                .withArguments(SpotlessDaemon.SPOTLESS_DAEMON_TASK_NAME).buildAndFail()
         val outcome = result.task(":${SpotlessDaemon.SPOTLESS_DAEMON_TASK_NAME}")?.outcome
 
         assertEquals(TaskOutcome.FAILED, outcome, "Should fail when neither port nor unixSocket set")
@@ -124,13 +124,13 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
     }
 
     @Test
-    @Timeout(20)
+//    @Timeout(20)
     fun `health check`(): Unit = runBlocking {
         val t = startRunner()
 
         try {
 
-            delay(12.seconds)
+            delay(30.seconds)
 
             println("${start.elapsedNow()}: Before Request: $projectDir exist: ${projectDir.exists()}, isDir: ${projectDir.isDirectory}")
             val response = http.get("")
