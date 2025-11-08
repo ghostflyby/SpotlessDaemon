@@ -25,6 +25,7 @@ import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.concurrent.thread
+import kotlin.io.path.appendText
 import kotlin.io.path.div
 import kotlin.time.Duration.Companion.seconds
 
@@ -92,6 +93,17 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: Path)
 
 
     private fun startRunner() = thread(start = true) {
+        buildFile.appendText(
+            """
+            spotless {
+                format("misc") {
+                    target("**/*.txt")
+                    trimTrailingWhitespace()
+                    endWithNewline()
+                }
+            }
+        """.trimIndent(),
+        )
         try {
             GradleRunner.create().withProjectDir(projectDir.toFile())
                 .withGradleDistribution(URI.create("https://github.com/ghostflyby/gradle/releases/download/fword-1/gradle-9.3.0-bin.zip"))
