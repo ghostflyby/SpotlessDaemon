@@ -30,7 +30,7 @@ jobs:
       - name: Build and Check
         run: |
           (
-          sleep 30
+          sleep 40
           jdb -attach 5005 << EOF
           stop at org.gradle.internal.resource.UriTextResource:154
           cont
