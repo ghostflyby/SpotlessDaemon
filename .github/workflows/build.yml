@@ -34,7 +34,7 @@ jobs:
           jdb -attach 5005 << EOF
           stop at org.gradle.internal.resource.UriTextResource:154
           cont
-          print e.getMessage\(\)
+          print e.getMessage()
           quit
           EOF
           ) &
