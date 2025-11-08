@@ -21,27 +21,26 @@ import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedClass
 import org.junit.jupiter.params.provider.EnumSource
 import java.io.ByteArrayOutputStream
-import java.io.File
 import java.net.URI
+import java.nio.file.Files
+import java.nio.file.Path
 import kotlin.concurrent.thread
+import kotlin.io.path.div
 import kotlin.time.Duration.Companion.seconds
-import kotlin.time.TimeMark
-import kotlin.time.TimeSource
 
 
 @ParameterizedClass
 @EnumSource(GradleTaskRunningTest.Kind::class)
-class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File) {
+class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: Path) {
 
 
-    val start: TimeMark = TimeSource.Monotonic.markNow()
-
-    val buildFile: File = projectDir.resolve("build.gradle.kts")
-    val settingsFile: File = projectDir.resolve("settings.gradle.kts")
+    val buildFile = projectDir / "build.gradle.kts"
+    val settingsFile = projectDir / "settings.gradle.kts"
 
     init {
-        buildFile.createNewFile()
-        buildFile.writeText(
+        Files.createFile(buildFile)
+        Files.writeString(
+            buildFile,
             """
             plugins {
                 id("com.diffplug.spotless")
@@ -50,7 +49,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
             
             """.trimIndent(),
         )
-        settingsFile.createNewFile()
+        Files.createFile(settingsFile)
     }
 
     /**
@@ -64,7 +63,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
 
     private val port by lazy { findFreePort() }
 
-    private val unixSocketPath by lazy { projectDir.resolve("spotless-daemon.sock").absolutePath }
+    private val unixSocketPath by lazy { projectDir.resolve("spotless-daemon.sock").toString() }
 
     private val http by lazy {
         HttpClient(CIO) {
@@ -87,11 +86,9 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
 
 
     private fun startRunner() = thread(start = true) {
-        println("${start.elapsedNow()}: Before Start: $projectDir exist: ${projectDir.exists()}, isDir: ${projectDir.isDirectory}, writable: ${projectDir.canWrite()}")
-        println(buildFile.readText())
         try {
 
-            GradleRunner.create().withProjectDir(projectDir)
+            GradleRunner.create().withProjectDir(projectDir.toFile())
                 .withGradleDistribution(URI.create("https://github.com/ghostflyby/gradle/releases/download/fword-1/gradle-9.3.0-bin.zip"))
                 .forwardOutput().withPluginClasspath().withArguments(
                     "spotlessDaemon",
@@ -102,9 +99,6 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
                 ).build()
         } catch (e: Exception) {
             e.printStackTrace()
-            println("${start.elapsedNow()}: After Failed: $buildFile exist: ${buildFile.exists()}, isRegular: ${buildFile.isFile}, canRead: ${buildFile.canRead()}")
-            println("${start.elapsedNow()}: After Failed: $projectDir exist: ${projectDir.exists()}, isDir: ${projectDir.isDirectory}, writable: ${projectDir.canWrite()}")
-            println(buildFile.readText())
         }
     }
 
@@ -117,7 +111,8 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
     fun `run without host config`() {
         val s = ByteArrayOutputStream()
         val result: BuildResult =
-            GradleRunner.create().withProjectDir(projectDir).withPluginClasspath().forwardStdError(s.bufferedWriter())
+            GradleRunner.create().withProjectDir(projectDir.toFile()).withPluginClasspath()
+                .forwardStdError(s.bufferedWriter())
                 .withArguments(SpotlessDaemon.SPOTLESS_DAEMON_TASK_NAME).buildAndFail()
         val outcome = result.task(":${SpotlessDaemon.SPOTLESS_DAEMON_TASK_NAME}")?.outcome
 
@@ -136,7 +131,6 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
 
             delay(20.seconds)
 
-            println("${start.elapsedNow()}: Before Request: $projectDir exist: ${projectDir.exists()}, isDir: ${projectDir.isDirectory}, writable: ${projectDir.canWrite()}")
             val response = http.get("")
             assertEquals(HttpStatusCode.OK, response.status, "Should respond with 200 OK")
 
