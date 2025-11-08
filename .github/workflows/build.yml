@@ -28,7 +28,17 @@ jobs:
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
       - name: Build and Check
-        run: ./gradlew build
+        run: |
+          (
+                sleep 6
+                jdb -attach 5005 << EOF
+                stop at org.gradle.internal.resource.UriTextResource:154
+                cont
+                print e.getMessage()
+                quit
+                EOF
+              ) &
+          ./gradlew build
       - name: Upload artifact
         uses: actions/upload-artifact@v5
         with:
