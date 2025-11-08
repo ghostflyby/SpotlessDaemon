@@ -37,6 +37,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
     val start: TimeMark = TimeSource.Monotonic.markNow()
 
     val buildFile: File = projectDir.resolve("build.gradle.kts")
+    val settingsFile: File = projectDir.resolve("settings.gradle.kts")
 
     init {
         buildFile.createNewFile()
@@ -49,6 +50,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
             
             """.trimIndent(),
         )
+        settingsFile.createNewFile()
     }
 
     /**
