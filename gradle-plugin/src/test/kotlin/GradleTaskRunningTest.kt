@@ -17,6 +17,7 @@ import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedClass
 import org.junit.jupiter.params.provider.EnumSource
@@ -92,8 +93,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
                 "spotlessDaemon",
                 if (kind == Kind.UNIX) "-Pdev.ghostflyby.spotless.daemon.unixsocket=$unixSocketPath"
                 else "-Pdev.ghostflyby.spotless.daemon.port=$port",
-                "--stacktrace",
-                "--info",
+                "--no-daemon",
             ).withEnvironment(
                 mapOf(
                     "ORG_GRADLE_JVMARGS" to "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005",
@@ -127,7 +127,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
     }
 
     @Test
-//    @Timeout(20)
+    @Timeout(20)
     fun `health check`(): Unit = runBlocking {
         val t = startRunner()
 
