@@ -90,7 +90,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
 
             GradleRunner.create().withProjectDir(projectDir).withPluginClasspath().withArguments(
                 "spotlessDaemon",
-//                "-Dorg.gradle.jvmargs=-agentlib:jdwp=transport=dt_socket,server=n,suspend=y,address=5005",
+                "-Dorg.gradle.jvmargs=-agentlib:jdwp=transport=dt_socket,server=n,suspend=y,address=5005",
                 if (kind == Kind.UNIX) "-Pdev.ghostflyby.spotless.daemon.unixsocket=$unixSocketPath"
                 else "-Pdev.ghostflyby.spotless.daemon.port=$port",
                 "--stacktrace",
@@ -130,7 +130,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: File)
 
         try {
 
-            delay(20.seconds)
+            delay(120.seconds)
 
             println("${start.elapsedNow()}: Before Request: $projectDir exist: ${projectDir.exists()}, isDir: ${projectDir.isDirectory}, writable: ${projectDir.canWrite()}")
             val response = http.get("")
