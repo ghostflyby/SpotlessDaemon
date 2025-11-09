@@ -50,3 +50,7 @@ kotlin {
 tasks.publish {
     dependsOn(tasks.publishPlugins)
 }
+
+tasks.jar {
+    archiveBaseName = "spotless-daemon-gradle-plugin"
+}
