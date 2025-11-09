@@ -143,6 +143,8 @@ internal abstract class SpotlessDaemonTask @Inject constructor(private val layou
                 mainLoop(channel, service.get())
 
             } catch (_: CancellationException) {
+            } catch (e: Exception) {
+                logger.error("Spotless Daemon encountered an error", e)
             } finally {
                 channel.close()
                 server.stopSuspend(1000, 2000)
