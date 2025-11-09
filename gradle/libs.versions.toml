@@ -5,16 +5,22 @@
 [versions]
 spotless = "8.0.0"
 ktor = "3.2.0"
+junit = "6.0.1"
 
 [libraries]
 spotless = { module = "com.diffplug.spotless:com.diffplug.spotless.gradle.plugin", version.ref = "spotless" }
-ktor-server-core-jvm = { module = "io.ktor:ktor-server-core-jvm", version.ref = "ktor" }
-ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
 ktor-server-cio = { module = "io.ktor:ktor-server-cio", version.ref = "ktor" }
+ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
+junit-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
+junit-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+junit-params = { module = "org.junit.jupiter:junit-jupiter-params", version.ref = "junit" }
+
 
 [plugins]
 changelog = { id = "org.jetbrains.changelog", version = "2.4.0" }
 gradle-plugin-publish = { id = "com.gradle.plugin-publish", version = "2.0.0" }
 
 [bundles]
-ktor-server = ["ktor-server-core-jvm", "ktor-server-core", "ktor-server-cio"]
+ktor-server = ["ktor-server-cio"]
+ktor-client = ["ktor-client-cio"]
