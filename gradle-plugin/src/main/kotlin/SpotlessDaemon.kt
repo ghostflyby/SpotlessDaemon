@@ -124,11 +124,6 @@ internal abstract class SpotlessDaemonTask @Inject constructor(private val layou
             get("") {
                 call.respondText("Spotless Daemon is running.")
             }
-            post("stop") {
-                call.respondText("Shutting down Spotless Daemon.")
-                server.stopSuspend(1000, 2000)
-                channel.close()
-            }
         }
 
         val param = service.get().parameters
