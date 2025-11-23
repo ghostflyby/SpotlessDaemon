@@ -4,6 +4,8 @@
 
 ### Added
 
+- stop endpoint to gracefully shut down the Spotless Daemon [#21](https://github.com/ghostflyby/SpotlessDaemon/pull/21)
+
 ### Changed
 
 ### Deprecated
