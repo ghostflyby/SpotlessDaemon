@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: LGPL-3.0-or-later
  * Part of SpotlessDaemon
  */
+
 import dev.ghostflyby.spotless.daemon.SpotlessDaemon
 import dev.ghostflyby.spotless.daemon.SpotlessDaemonTask
 import io.ktor.client.*
@@ -17,6 +18,7 @@ import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedClass
 import org.junit.jupiter.params.provider.EnumSource
@@ -24,7 +26,6 @@ import java.io.ByteArrayOutputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.concurrent.thread
-import kotlin.io.path.Path
 import kotlin.io.path.div
 import kotlin.time.Duration.Companion.seconds
 
@@ -38,11 +39,6 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir var projectDir: Path)
 //    val settingsFile = projectDir / "settings.gradle.kts"
 
     init {
-        val runnerTmp = System.getenv("RUNNER_TEMP")
-        if (runnerTmp != null) {
-            projectDir = Files.createTempDirectory(Path(runnerTmp), "spd-test")
-            buildFile = projectDir / "build.gradle.kts"
-        }
         Files.createFile(buildFile)
         Files.writeString(
             buildFile,
@@ -54,13 +50,6 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir var projectDir: Path)
             
             """.trimIndent(),
         )
-//        Files.createFile(settingsFile)
-//        Files.writeString(
-//            settingsFile,
-//            """
-//            rootProject.name = "spotless-daemon-test-project"
-//            """.trimIndent(),
-//        )
     }
 
     /**
@@ -99,7 +88,6 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir var projectDir: Path)
     private fun startRunner() = thread(start = true) {
         try {
             GradleRunner.create().withProjectDir(projectDir.toFile())
-//                .withGradleDistribution(URI.create("https://github.com/ghostflyby/gradle/releases/download/fword-1/gradle-9.3.0-bin.zip"))
                 .forwardOutput().withPluginClasspath().withArguments(
                     "spotlessDaemon",
                     "--info",
@@ -133,13 +121,13 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir var projectDir: Path)
     }
 
     @Test
-//    @Timeout(20)
+    @Timeout(20)
     fun `health check`(): Unit = runBlocking {
         val t = startRunner()
 
         try {
 
-            delay(30.seconds)
+            delay(10.seconds)
 
             val response = http.get("")
             assertEquals(HttpStatusCode.OK, response.status, "Should respond with 200 OK")
