@@ -41,3 +41,7 @@ The task will block, running the daemon until interrupted.
 * `200 OK` with formatted file content as `text/plain` in body if successful
 * `200 OK` with empty body if no changes were made
 * `500 Internal Server Error` if problems occurred during formatting
+
+#### POST /stop
+
+* `200 OK` and stops the daemon
