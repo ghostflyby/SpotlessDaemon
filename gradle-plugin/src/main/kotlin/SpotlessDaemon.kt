@@ -120,6 +120,10 @@ internal abstract class SpotlessDaemonTask @Inject constructor() : DefaultTask()
             get("") {
                 call.respondText("Spotless Daemon is running.")
             }
+            post("stop") {
+                call.respondText("Shutting down Spotless Daemon.")
+                server.stopSuspend(1000, 2000)
+            }
         }
 
         val param = service.get().parameters
