@@ -35,9 +35,9 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir var projectDir: Path)
 
 
     var buildFile = projectDir / "build.gradle.kts"
-//    val settingsFile = projectDir / "settings.gradle.kts"
 
     init {
+        Files.createDirectories(projectDir)
         Files.createFile(buildFile)
         Files.writeString(
             buildFile,
