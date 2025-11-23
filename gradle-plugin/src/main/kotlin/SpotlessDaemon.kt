@@ -124,7 +124,6 @@ internal abstract class SpotlessDaemonTask @Inject constructor() : DefaultTask()
                 call.respondText("Shutting down Spotless Daemon.")
                 server.stopSuspend(1000, 2000)
                 channel.close()
-                server.stop(1000, 2000)
             }
         }
 
