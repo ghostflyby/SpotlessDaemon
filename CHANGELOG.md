@@ -5,6 +5,7 @@
 ### Added
 
 - stop endpoint to gracefully shut down the Spotless Daemon [#21](https://github.com/ghostflyby/SpotlessDaemon/pull/21)
+- `dryrun` parameter to check if a file is covered by Spotless without formatting
 
 ### Changed
 

@@ -150,12 +150,17 @@ internal abstract class SpotlessDaemonTask @Inject constructor(private val layou
 }
 
 internal suspend fun mainLoop(channel: Channel<Req>, service: FutureService) {
-    for ((path, content, future) in channel) {
+    for ((path, content, future, dryrun) in channel) {
 
 //        val id = service.putFuture(future)
 
         val formatter = service.getFormatterFor(path) ?: future.run {
             complete(Resp.NotFormatted("File not covered by Spotless: $path", HttpStatusCode.NotFound))
+            continue
+        }
+
+        if (dryrun) {
+            future.complete(Resp.NotFormatted("", HttpStatusCode.OK))
             continue
         }
 
@@ -180,18 +185,24 @@ internal suspend fun mainLoop(channel: Channel<Req>, service: FutureService) {
     }
 }
 
-internal data class Req(val path: String, val content: String, val future: CompletableDeferred<Resp>)
+internal data class Req(
+    val path: String,
+    val content: String,
+    val future: CompletableDeferred<Resp>,
+    val dryrun: Boolean,
+)
 
 internal suspend fun RoutingContext.action(channel: Channel<Req>) {
     val path = call.queryParameters["path"] ?: return call.respondText(
         "Missing path query parameter",
         status = HttpStatusCode.BadRequest,
     )
+    val dryrun = call.queryParameters["dryrun"] != null
     val content = call.receiveText()
 
     val future = CompletableDeferred<Resp>()
 
-    channel.send(Req(path, content, future))
+    channel.send(Req(path, content, future, dryrun))
 
     val result = future.await()
 

@@ -42,6 +42,11 @@ The task will block, running the daemon until interrupted.
 * `200 OK` with empty body if no changes were made
 * `500 Internal Server Error` if problems occurred during formatting
 
+#### POST /?path={path}&dryrun
+
+* `404 Not Found` if file not covered by spotless, either no such file or not included in config.
+* `200 OK` with empty body if file covered by spotless
+
 #### POST /stop
 
 * `200 OK` and stops the daemon
