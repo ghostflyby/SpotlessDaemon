@@ -101,7 +101,6 @@ internal abstract class SpotlessDaemonTask @Inject constructor(private val layou
             CIO,
             configure = {
                 if (unixsocket.isPresent) unixConnector(unixsocket.get()) {
-                    host = "127.0.0.1"
                 }
                 else connector {
                     port = this@SpotlessDaemonTask.port.get()
