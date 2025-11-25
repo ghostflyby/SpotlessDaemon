@@ -18,6 +18,7 @@ import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedClass
 import org.junit.jupiter.params.provider.EnumSource
@@ -120,13 +121,13 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir var projectDir: Path)
     }
 
     @Test
-//    @Timeout(20)
+    @Timeout(30)
     fun `health check`(): Unit = runBlocking {
         val t = startRunner()
 
         try {
 
-            delay(10.seconds)
+            delay(20.seconds)
 
             val response = http.get("")
             assertEquals(HttpStatusCode.OK, response.status, "Should respond with 200 OK")
