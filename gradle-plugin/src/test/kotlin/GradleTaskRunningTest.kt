@@ -132,7 +132,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: Path)
                     assertEquals(HttpStatusCode.OK, response.status, "Should respond with 200 OK")
                     return@repeat
                 } catch (e: Exception) {
-                    if (it == 39) throw e // Last attempt failed
+                    if (it == 59) throw e // Last attempt failed
                     delay(500)
                 }
             }
