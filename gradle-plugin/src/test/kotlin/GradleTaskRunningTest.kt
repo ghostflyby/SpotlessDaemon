@@ -32,7 +32,7 @@ import kotlin.time.Duration.Companion.seconds
 
 @ParameterizedClass
 @EnumSource(GradleTaskRunningTest.Kind::class)
-class GradleTaskRunningTest(val kind: Kind, @param:TempDir var projectDir: Path) {
+class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: Path) {
 
 
     val buildFile = projectDir / "build.gradle.kts"
