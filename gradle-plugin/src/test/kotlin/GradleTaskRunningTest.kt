@@ -35,7 +35,7 @@ import kotlin.time.Duration.Companion.seconds
 class GradleTaskRunningTest(val kind: Kind, @param:TempDir var projectDir: Path) {
 
 
-    var buildFile = projectDir / "build.gradle.kts"
+    val buildFile = projectDir / "build.gradle.kts"
 
     init {
         Files.createDirectories(projectDir)
