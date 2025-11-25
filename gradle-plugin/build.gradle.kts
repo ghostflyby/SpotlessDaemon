@@ -57,7 +57,7 @@ tasks.publish {
     dependsOn(tasks.publishPlugins)
 }
 
-tasks.jar {
+tasks.withType<Jar> {
     archiveBaseName = "spotless-daemon-gradle-plugin"
 }
 
