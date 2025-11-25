@@ -126,7 +126,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir var projectDir: Path)
 
         try {
 
-            delay(30.seconds)
+            delay(5.seconds)
 
             val response = http.get("")
             assertEquals(HttpStatusCode.OK, response.status, "Should respond with 200 OK")
