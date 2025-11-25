@@ -197,7 +197,7 @@ internal suspend fun RoutingContext.action(channel: Channel<Req>) {
         "Missing path query parameter",
         status = HttpStatusCode.BadRequest,
     )
-    val dryrun = call.request.queryParameters["dryrun"] != null
+    val dryrun = call.queryParameters["dryrun"] != null
     val content = call.receiveText()
 
     val future = CompletableDeferred<Resp>()
