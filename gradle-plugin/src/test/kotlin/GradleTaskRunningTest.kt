@@ -126,7 +126,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: Path)
 
         try {
 
-            repeat(60) { // 40 attempts * 500ms = 20 seconds max
+            repeat(60) { // 60 attempts * 500ms = 30 seconds max
                 try {
                     val response = http.get("")
                     assertEquals(HttpStatusCode.OK, response.status, "Should respond with 200 OK")
