@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: LGPL-3.0-or-later
  * Part of SpotlessDaemon
  */
+import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -29,7 +30,12 @@ gradlePlugin {
 dependencies {
     implementation(libs.spotless)
     implementation(libs.bundles.ktor.server)
-    testImplementation(kotlin("test"))
+    testImplementation(libs.bundles.ktor.client)
+    testCompileOnly(libs.junit.api)
+    testRuntimeOnly(libs.junit.engine)
+    testRuntimeOnly(libs.junit.platform.launcher)
+    testImplementation(libs.junit.params)
+    testImplementation(gradleTestKit())
 }
 
 signing {
@@ -53,4 +59,11 @@ tasks.publish {
 
 tasks.jar {
     archiveBaseName = "spotless-daemon-gradle-plugin"
+}
+
+tasks.withType<Test> {
+    useJUnitPlatform()
+    testLogging {
+        events(TestLogEvent.PASSED, TestLogEvent.FAILED, TestLogEvent.SKIPPED)
+    }
 }
