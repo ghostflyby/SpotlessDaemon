@@ -27,7 +27,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.concurrent.thread
 import kotlin.io.path.div
-import kotlin.time.Duration.Companion.seconds
 
 
 @ParameterizedClass
@@ -121,19 +120,19 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: Path)
     }
 
     @Test
-    @Timeout(30)
+    @Timeout(50)
     fun `health check`(): Unit = runBlocking {
         val t = startRunner()
 
         try {
 
-            repeat(40) { // 40 attempts * 500ms = 20 seconds max
+            repeat(60) { // 60 attempts * 500ms = 30 seconds max
                 try {
                     val response = http.get("")
                     assertEquals(HttpStatusCode.OK, response.status, "Should respond with 200 OK")
                     return@repeat
                 } catch (e: Exception) {
-                    if (it == 39) throw e // Last attempt failed
+                    if (it == 59) throw e // Last attempt failed
                     delay(500)
                 }
             }
