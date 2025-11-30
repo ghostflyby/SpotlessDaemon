@@ -4,6 +4,8 @@
 
 ### Added
 
+- add logging for debugging purposes [#29](https://github.com/ghostflyby/SpotlessDaemon/pull/29)
+
 ### Changed
 
 ### Deprecated

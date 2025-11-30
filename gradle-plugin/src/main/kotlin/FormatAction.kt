@@ -8,11 +8,15 @@ package dev.ghostflyby.spotless.daemon
 
 import com.diffplug.spotless.DirtyState
 import io.ktor.http.*
+import org.gradle.api.logging.Logging
 import org.gradle.workers.WorkAction
 import java.io.File
 import javax.inject.Inject
 
 internal abstract class FormatAction @Inject constructor() : WorkAction<FormatParams> {
+
+    private val log = Logging.getLogger(FormatAction::class.java)
+
     override fun execute() {
 
         val path = parameters.path.get()
@@ -23,6 +27,7 @@ internal abstract class FormatAction @Inject constructor() : WorkAction<FormatPa
 
 
         val formatter = service.getFormatterFor(path) ?: return reply.run {
+            log.warn("File not covered by Spotless: $path")
             complete(Resp.NotFormatted("File not covered by Spotless: $path", HttpStatusCode.NotFound))
         }
 
@@ -32,12 +37,14 @@ internal abstract class FormatAction @Inject constructor() : WorkAction<FormatPa
 
 
         if (state.isClean) {
+            log.debug("File already clean: $path")
             reply.complete(Resp.NotFormatted("", HttpStatusCode.OK))
             return
         }
 
 
 
+        log.info("Formatted $path")
         reply.complete(Resp.Formatted(state, formatter.encoding))
     }
 }
