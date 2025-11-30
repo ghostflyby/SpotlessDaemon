@@ -4,6 +4,8 @@
 
 ### Added
 
+- add logging for debugging purposes
+
 ### Changed
 
 ### Deprecated

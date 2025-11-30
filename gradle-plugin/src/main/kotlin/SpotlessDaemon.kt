@@ -26,6 +26,7 @@ import org.gradle.api.Project
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.ProjectLayout
+import org.gradle.api.logging.Logging
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.services.ServiceReference
@@ -51,6 +52,8 @@ class SpotlessDaemon : Plugin<Project> {
         const val SPOTLESS_DAEMON_TASK_NAME = "spotlessDaemon"
     }
 }
+
+private val log = Logging.getLogger(SpotlessDaemon::class.java)
 
 private fun Project.apply() {
     val s = gradle.sharedServices.registerIfAbsent("SpotlessDaemonBridgeService", FutureService::class.java) {}
@@ -97,6 +100,14 @@ internal abstract class SpotlessDaemonTask @Inject constructor(private val layou
     @TaskAction
     fun run() {
 
+        val listenDescription = when {
+            unixsocket.isPresent -> "unix socket ${unixsocket.get()}"
+            port.isPresent -> "port ${port.get()}"
+            else -> "unknown address"
+        }
+
+        logger.lifecycle("Starting Spotless Daemon on $listenDescription with ${targets.files.size} targets")
+
         val server = embeddedServer(
             CIO,
             configure = {
@@ -117,6 +128,7 @@ internal abstract class SpotlessDaemonTask @Inject constructor(private val layou
                 action(channel)
             }
             post("/stop") {
+                log.lifecycle("Stop requested; shutting down Spotless Daemon")
                 call.respond(HttpStatusCode.OK)
                 channel.cancel()
             }
@@ -134,6 +146,8 @@ internal abstract class SpotlessDaemonTask @Inject constructor(private val layou
             try {
                 server.startSuspend(wait = false)
 
+                log.info("Spotless Daemon started; awaiting formatting requests")
+
                 mainLoop(channel, service.get())
 
             } catch (_: CancellationException) {
@@ -142,6 +156,7 @@ internal abstract class SpotlessDaemonTask @Inject constructor(private val layou
             } finally {
                 channel.close()
                 server.stopSuspend(1000, 2000)
+                logger.lifecycle("Spotless Daemon stopped")
             }
         }
 
@@ -152,14 +167,18 @@ internal abstract class SpotlessDaemonTask @Inject constructor(private val layou
 internal suspend fun mainLoop(channel: Channel<Req>, service: FutureService) {
     for ((path, content, future, dryrun) in channel) {
 
+        log.info("Received request for $path (dryrun=$dryrun)")
+
 //        val id = service.putFuture(future)
 
         val formatter = service.getFormatterFor(path) ?: future.run {
+            log.warn("File not covered by Spotless: $path")
             complete(Resp.NotFormatted("File not covered by Spotless: $path", HttpStatusCode.NotFound))
             continue
         }
 
         if (dryrun) {
+            log.debug("Dry run request succeeded for $path")
             future.complete(Resp.NotFormatted("", HttpStatusCode.OK))
             continue
         }
@@ -169,10 +188,17 @@ internal suspend fun mainLoop(channel: Channel<Req>, service: FutureService) {
 
 
         if (state.isClean) {
+            log.debug("File already clean: $path")
             future.complete(Resp.NotFormatted("", HttpStatusCode.OK))
             continue
         }
 
+
+        if (state.didNotConverge()) {
+            log.warn("Formatter did not converge for $path")
+        } else {
+            log.info("Formatted $path")
+        }
 
         future.complete(Resp.Formatted(state, formatter.encoding))
 
@@ -199,6 +225,8 @@ internal suspend fun RoutingContext.action(channel: Channel<Req>) {
     )
     val dryrun = call.queryParameters["dryrun"] != null
     val content = call.receiveText()
+
+    log.debug("Handling request path=$path dryrun=$dryrun")
 
     val future = CompletableDeferred<Resp>()
 
@@ -229,5 +257,3 @@ internal sealed interface Resp {
     data class NotFormatted(val content: String, val status: HttpStatusCode) : Resp
     data class Formatted(val state: DirtyState, val charset: Charset) : Resp
 }
-
-

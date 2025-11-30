@@ -11,6 +11,7 @@ import kotlinx.coroutines.CompletableDeferred
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileCollection
+import org.gradle.api.logging.Logging
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
@@ -20,6 +21,8 @@ import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 
 internal abstract class FutureService @Inject constructor() : BuildService<FutureService.FutureServiceParams> {
+
+    private val log = Logging.getLogger(FutureService::class.java)
 
     internal interface FutureServiceParams : BuildServiceParameters {
         val fileCollection: ConfigurableFileCollection
@@ -48,9 +51,11 @@ internal abstract class FutureService @Inject constructor() : BuildService<Futur
         val mapping = parameters.formatterMapping.get()
         for ((key, value) in mapping) {
             if (key.contains(file)) {
+                log.debug("Resolved formatter for ${file.absolutePath}")
                 return value
             }
         }
+        log.debug("No formatter mapping found for ${file.absolutePath}")
         return null
     }
 
