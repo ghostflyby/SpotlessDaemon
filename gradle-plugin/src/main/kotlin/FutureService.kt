@@ -33,6 +33,7 @@ internal abstract class FutureService @Inject constructor() : BuildService<Futur
     fun getFormatterFor(file: String): Formatter? {
         val relativeFile = parameters.projectRoot.get().file(file).asFile
         val targets = parameters.fileCollection
+        log.info("all known files: ${targets.files.joinToString("\n")}")
         if (targets.contains(relativeFile)) {
             return getFormatterFor(relativeFile)
         }
@@ -51,11 +52,11 @@ internal abstract class FutureService @Inject constructor() : BuildService<Futur
         val mapping = parameters.formatterMapping.get()
         for ((key, value) in mapping) {
             if (key.contains(file)) {
-                log.debug("Resolved formatter for ${file.absolutePath}")
+                log.info("Resolved formatter for ${file.absolutePath}")
                 return value
             }
         }
-        log.debug("No formatter mapping found for ${file.absolutePath}")
+        log.info("No formatter mapping found for ${file.absolutePath}")
         return null
     }
 

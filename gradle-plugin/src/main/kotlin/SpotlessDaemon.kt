@@ -172,13 +172,13 @@ internal suspend fun mainLoop(channel: Channel<Req>, service: FutureService) {
 //        val id = service.putFuture(future)
 
         val formatter = service.getFormatterFor(path) ?: future.run {
-            log.warn("File not covered by Spotless: $path")
+            log.info("File not covered by Spotless: $path")
             complete(Resp.NotFormatted("File not covered by Spotless: $path", HttpStatusCode.NotFound))
             continue
         }
 
         if (dryrun) {
-            log.debug("Dry run request succeeded for $path")
+            log.info("Dry run request succeeded for $path")
             future.complete(Resp.NotFormatted("", HttpStatusCode.OK))
             continue
         }
@@ -188,14 +188,14 @@ internal suspend fun mainLoop(channel: Channel<Req>, service: FutureService) {
 
 
         if (state.isClean) {
-            log.debug("File already clean: $path")
+            log.info("File already clean: $path")
             future.complete(Resp.NotFormatted("", HttpStatusCode.OK))
             continue
         }
 
 
         if (state.didNotConverge()) {
-            log.warn("Formatter did not converge for $path")
+            log.info("Formatter did not converge for $path")
         } else {
             log.info("Formatted $path")
         }
@@ -226,7 +226,7 @@ internal suspend fun RoutingContext.action(channel: Channel<Req>) {
     val dryrun = call.queryParameters["dryrun"] != null
     val content = call.receiveText()
 
-    log.debug("Handling request path=$path dryrun=$dryrun")
+    log.info("Handling request path=$path dryrun=$dryrun")
 
     val future = CompletableDeferred<Resp>()
 
