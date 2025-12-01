@@ -6,6 +6,8 @@
 
 ### Changed
 
+- remove targets pre-check [#33](https://github.com/ghostflyby/SpotlessDaemon/pull/33)
+
 ### Deprecated
 
 ### Removed

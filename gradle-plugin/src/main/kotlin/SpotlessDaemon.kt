@@ -139,7 +139,7 @@ internal abstract class SpotlessDaemonTask @Inject constructor(private val layou
 
         val param = service.get().parameters
         param.projectRoot.set(layout.projectDirectory)
-        param.fileCollection.from(targets)
+        // param.fileCollection.from(targets)
         param.formatterMapping.set(formatterMapping)
 
         runBlocking {
