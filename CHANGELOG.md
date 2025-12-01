@@ -4,8 +4,6 @@
 
 ### Added
 
-- add logging for debugging purposes [#29](https://github.com/ghostflyby/SpotlessDaemon/pull/29)
-
 ### Changed
 
 ### Deprecated
@@ -15,6 +13,12 @@
 ### Fixed
 
 ### Security
+
+## 0.2.2 - 2025-11-30
+
+### Added
+
+- add logging for debugging purposes [#29](https://github.com/ghostflyby/SpotlessDaemon/pull/29)
 
 ## 0.2.1 - 2025-11-25
 
