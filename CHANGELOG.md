@@ -6,8 +6,6 @@
 
 ### Changed
 
-- remove targets pre-check [#33](https://github.com/ghostflyby/SpotlessDaemon/pull/33)
-
 ### Deprecated
 
 ### Removed
@@ -15,6 +13,12 @@
 ### Fixed
 
 ### Security
+
+## 0.2.4 - 2025-12-01
+
+### Changed
+
+- remove targets pre-check [#33](https://github.com/ghostflyby/SpotlessDaemon/pull/33)
 
 ## 0.2.3 - 2025-12-01
 
