@@ -15,6 +15,7 @@ dependencyResolutionManagement {
 
 
 include(":gradle-plugin")
+project(":gradle-plugin").name = "spotless-daemon-gradle-plugin"
 
 plugins {
     // Use the Foojay Toolchains plugin to automatically download JDKs required by subprojects.
