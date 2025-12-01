@@ -6,8 +6,6 @@
 
 ### Changed
 
-- change main logging level to info [#31](https://github.com/ghostflyby/SpotlessDaemon/pull/31)
-
 ### Deprecated
 
 ### Removed
@@ -15,6 +13,12 @@
 ### Fixed
 
 ### Security
+
+## 0.2.3 - 2025-12-01
+
+### Changed
+
+- change main logging level to info [#31](https://github.com/ghostflyby/SpotlessDaemon/pull/31)
 
 ## 0.2.2 - 2025-11-30
 
