@@ -27,7 +27,7 @@ internal abstract class FormatAction @Inject constructor() : WorkAction<FormatPa
 
 
         val formatter = service.getFormatterFor(path) ?: return reply.run {
-            log.warn("File not covered by Spotless: $path")
+            log.info("File not covered by Spotless: $path")
             complete(Resp.NotFormatted("File not covered by Spotless: $path", HttpStatusCode.NotFound))
         }
 
@@ -37,7 +37,7 @@ internal abstract class FormatAction @Inject constructor() : WorkAction<FormatPa
 
 
         if (state.isClean) {
-            log.debug("File already clean: $path")
+            log.info("File already clean: $path")
             reply.complete(Resp.NotFormatted("", HttpStatusCode.OK))
             return
         }
