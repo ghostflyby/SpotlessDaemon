@@ -6,6 +6,8 @@
 
 ### Changed
 
+- change main logging level to info [#31](https://github.com/ghostflyby/SpotlessDaemon/pull/31)
+
 ### Deprecated
 
 ### Removed
