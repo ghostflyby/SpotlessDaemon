@@ -33,6 +33,7 @@ internal abstract class FutureService @Inject constructor() : BuildService<Futur
     fun getFormatterFor(file: String): Formatter? {
         val relativeFile = parameters.projectRoot.get().file(file).asFile
         val targets = parameters.fileCollection
+        log.info("all known files: ${targets.files.joinToString("\n")}")
         if (targets.contains(relativeFile)) {
             return getFormatterFor(relativeFile)
         }
