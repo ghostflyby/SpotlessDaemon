@@ -8,6 +8,7 @@ package dev.ghostflyby.spotless.daemon
 
 import com.diffplug.spotless.Formatter
 import kotlinx.coroutines.CompletableDeferred
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileCollection
 import org.gradle.api.logging.Logging
@@ -24,22 +25,22 @@ internal abstract class FutureService @Inject constructor() : BuildService<Futur
     private val log = Logging.getLogger(FutureService::class.java)
 
     internal interface FutureServiceParams : BuildServiceParameters {
-        //        val fileCollection: ConfigurableFileCollection
+        val fileCollection: ConfigurableFileCollection
         val formatterMapping: MapProperty<FileCollection, Formatter>
         val projectRoot: DirectoryProperty
     }
 
     fun getFormatterFor(file: String): Formatter? {
         val relativeFile = parameters.projectRoot.get().file(file).asFile
-//        val targets = parameters.fileCollection
-//        log.info("all known files: ${targets.files.joinToString("\n")}")
-//        if (targets.contains(relativeFile)) {
-//            return getFormatterFor(relativeFile)
-//        }
-//        val absFile = File(file)
-//        if (targets.contains(absFile)) {
-//            return getFormatterFor(absFile)
-//        }
+        val targets = parameters.fileCollection
+        log.info("all known files: ${targets.files.joinToString("\n")}")
+        if (targets.contains(relativeFile)) {
+            return getFormatterFor(relativeFile)
+        }
+        val absFile = File(file)
+        if (targets.contains(absFile)) {
+            return getFormatterFor(absFile)
+        }
         return getFormatterFor(relativeFile) ?: getFormatterFor(File(file))
     }
 
