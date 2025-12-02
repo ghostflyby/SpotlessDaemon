@@ -58,22 +58,10 @@ private val log = Logging.getLogger(SpotlessDaemon::class.java)
 private fun Project.apply() {
     val s = gradle.sharedServices.registerIfAbsent("SpotlessDaemonBridgeService", FutureService::class.java) {}
 
-    val task = tasks.register<SpotlessDaemonTask>(SpotlessDaemon.SPOTLESS_DAEMON_TASK_NAME) {
+    tasks.register<SpotlessDaemonTask>(SpotlessDaemon.SPOTLESS_DAEMON_TASK_NAME) {
         usesService(s)
     }
 
-    afterEvaluate {
-        task.configure {
-            tasks.withType<SpotlessTask>().forEach {
-                targets.from(it.target)
-                val formatter =
-                    Formatter.builder().steps(it.stepsInternalRoundtrip.steps)
-                        .lineEndingsPolicy(it.lineEndingsPolicy.get())
-                        .encoding(Charset.forName(it.encoding)).build()
-                formatterMapping.put(it.target, formatter)
-            }
-        }
-    }
 }
 
 @DisableCachingByDefault(because = "Daemon-like task; no reproducible outputs")
@@ -111,6 +99,14 @@ internal abstract class SpotlessDaemonTask @Inject constructor(private val layou
             port.isPresent -> "port ${port.get()}"
             else -> "unknown address"
         }
+        project.tasks.withType<SpotlessTask>().forEach {
+            targets.from(it.target)
+            val formatter =
+                Formatter.builder().steps(it.stepsInternalRoundtrip.steps)
+                    .lineEndingsPolicy(it.lineEndingsPolicy.get())
+                    .encoding(Charset.forName(it.encoding)).build()
+            formatterMapping.put(it.target, formatter)
+        }
 
         logger.lifecycle("Starting Spotless Daemon on $listenDescription with ${targets.files.size} targets")
 
@@ -145,7 +141,7 @@ internal abstract class SpotlessDaemonTask @Inject constructor(private val layou
 
         val param = service.get().parameters
         param.projectRoot.set(layout.projectDirectory)
-        // param.fileCollection.from(targets)
+        param.fileCollection.from(targets)
         param.formatterMapping.set(formatterMapping)
 
         runBlocking {

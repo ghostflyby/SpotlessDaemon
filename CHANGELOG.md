@@ -6,6 +6,8 @@
 
 ### Changed
 
+- grab spotless config in TaskAction [#37](https://github.com/ghostflyby/SpotlessDaemon/pull/37)
+
 ### Deprecated
 
 ### Removed
