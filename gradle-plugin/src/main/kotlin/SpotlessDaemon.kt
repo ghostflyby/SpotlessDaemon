@@ -43,7 +43,9 @@ import javax.inject.Inject
 class SpotlessDaemon : Plugin<Project> {
     override fun apply(target: Project) {
         target.pluginManager.withPlugin(SPOTLESS_PLUGIN_ID) {
-            target.apply()
+            target.afterEvaluate {
+                target.apply()
+            }
         }
     }
 
