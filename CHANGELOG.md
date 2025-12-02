@@ -6,6 +6,8 @@
 
 ### Changed
 
+- evaluate the plugin after project configuration [#35](https://github.com/ghostflyby/SpotlessDaemon/pull/35)
+
 ### Deprecated
 
 ### Removed
