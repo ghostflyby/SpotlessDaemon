@@ -6,8 +6,6 @@
 
 ### Changed
 
-- evaluate the plugin after project configuration [#35](https://github.com/ghostflyby/SpotlessDaemon/pull/35)
-
 ### Deprecated
 
 ### Removed
@@ -15,6 +13,12 @@
 ### Fixed
 
 ### Security
+
+## 0.2.5 - 2025-12-02
+
+### Changed
+
+- evaluate the plugin after project configuration [#35](https://github.com/ghostflyby/SpotlessDaemon/pull/35)
 
 ## 0.2.4 - 2025-12-01
 
