@@ -43,9 +43,7 @@ import javax.inject.Inject
 class SpotlessDaemon : Plugin<Project> {
     override fun apply(target: Project) {
         target.pluginManager.withPlugin(SPOTLESS_PLUGIN_ID) {
-            target.afterEvaluate {
-                target.apply()
-            }
+            target.apply()
         }
     }
 
@@ -60,14 +58,20 @@ private val log = Logging.getLogger(SpotlessDaemon::class.java)
 private fun Project.apply() {
     val s = gradle.sharedServices.registerIfAbsent("SpotlessDaemonBridgeService", FutureService::class.java) {}
 
-    tasks.register<SpotlessDaemonTask>(SpotlessDaemon.SPOTLESS_DAEMON_TASK_NAME) {
+    val task = tasks.register<SpotlessDaemonTask>(SpotlessDaemon.SPOTLESS_DAEMON_TASK_NAME) {
         usesService(s)
-        tasks.withType<SpotlessTask>().forEach {
-            targets.from(it.target)
-            val formatter =
-                Formatter.builder().steps(it.stepsInternalRoundtrip.steps).lineEndingsPolicy(it.lineEndingsPolicy.get())
-                    .encoding(Charset.forName(it.encoding)).build()
-            formatterMapping.put(it.target, formatter)
+    }
+
+    afterEvaluate {
+        task.configure {
+            tasks.withType<SpotlessTask>().forEach {
+                targets.from(it.target)
+                val formatter =
+                    Formatter.builder().steps(it.stepsInternalRoundtrip.steps)
+                        .lineEndingsPolicy(it.lineEndingsPolicy.get())
+                        .encoding(Charset.forName(it.encoding)).build()
+                formatterMapping.put(it.target, formatter)
+            }
         }
     }
 }
