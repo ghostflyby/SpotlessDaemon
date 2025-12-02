@@ -6,8 +6,6 @@
 
 ### Changed
 
-- grab spotless config in TaskAction [#37](https://github.com/ghostflyby/SpotlessDaemon/pull/37)
-
 ### Deprecated
 
 ### Removed
@@ -15,6 +13,12 @@
 ### Fixed
 
 ### Security
+
+## 0.2.6 - 2025-12-02
+
+### Changed
+
+- grab spotless config in TaskAction [#37](https://github.com/ghostflyby/SpotlessDaemon/pull/37)
 
 ## 0.2.5 - 2025-12-02
 
