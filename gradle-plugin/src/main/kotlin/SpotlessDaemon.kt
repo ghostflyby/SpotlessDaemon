@@ -23,18 +23,18 @@ import kotlinx.coroutines.runBlocking
 import org.gradle.api.DefaultTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.logging.Logging
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.services.ServiceReference
-import org.gradle.api.tasks.*
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.TaskAction
 import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
 import org.gradle.work.DisableCachingByDefault
-import org.gradle.work.Incremental
 import java.io.File
 import java.nio.charset.Charset
 import javax.inject.Inject
@@ -83,14 +83,6 @@ internal abstract class SpotlessDaemonTask @Inject constructor(private val layou
     @get:ServiceReference
     abstract val service: Property<FutureService>
 
-    @get:InputFiles
-    @get:Incremental
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val targets: ConfigurableFileCollection
-
-    @get:Input
-    abstract val formatterMapping: MapProperty<FileCollection, Formatter>
-
     @TaskAction
     fun run() {
 
@@ -99,6 +91,9 @@ internal abstract class SpotlessDaemonTask @Inject constructor(private val layou
             port.isPresent -> "port ${port.get()}"
             else -> "unknown address"
         }
+        val targets = project.objects.fileCollection()
+        val formatterMapping: MapProperty<FileCollection, Formatter> =
+            project.objects.mapProperty(FileCollection::class.java, Formatter::class.java)
         project.tasks.withType<SpotlessTask>().forEach {
             targets.from(it.target)
             val formatter =
