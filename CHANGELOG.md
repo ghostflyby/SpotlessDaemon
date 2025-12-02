@@ -6,6 +6,8 @@
 
 ### Changed
 
+- remove unused properties from SpotlessDaemon [#39](https://github.com/ghostflyby/SpotlessDaemon/pull/39)
+
 ### Deprecated
 
 ### Removed
