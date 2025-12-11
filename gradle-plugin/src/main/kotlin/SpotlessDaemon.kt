@@ -6,6 +6,7 @@
 
 package dev.ghostflyby.spotless.daemon
 
+import com.diffplug.gradle.spotless.SpotlessPlugin
 import com.diffplug.gradle.spotless.SpotlessTask
 import com.diffplug.spotless.DirtyState
 import com.diffplug.spotless.Formatter
@@ -26,7 +27,7 @@ import org.gradle.api.Project
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.ProjectLayout
-import org.gradle.api.logging.Logging
+import org.gradle.api.logging.Logger
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.services.ServiceReference
@@ -45,7 +46,10 @@ import javax.inject.Inject
 class SpotlessDaemon : Plugin<Project> {
     override fun apply(target: Project) {
         target.pluginManager.withPlugin(SPOTLESS_PLUGIN_ID) {
-            target.apply()
+            if (target.rootProject != target) {
+                return@withPlugin
+            }
+            target.configureRootTask()
         }
     }
 
@@ -55,24 +59,29 @@ class SpotlessDaemon : Plugin<Project> {
     }
 }
 
-private val log = Logging.getLogger(SpotlessDaemon::class.java)
+private fun Project.configureRootTask() {
 
-private fun Project.apply() {
+    val serviceProvider =
+        gradle.sharedServices.registerIfAbsent("SpotlessDaemonBridgeService", FutureService::class.java) {}
 
-    if (rootProject != this) {
-        return
+    val daemonTask = tasks.register<SpotlessDaemonTask>(SpotlessDaemon.SPOTLESS_DAEMON_TASK_NAME) {
+        usesService(serviceProvider)
     }
-    val s = gradle.sharedServices.registerIfAbsent("SpotlessDaemonBridgeService", FutureService::class.java) {}
 
-    tasks.register<SpotlessDaemonTask>(SpotlessDaemon.SPOTLESS_DAEMON_TASK_NAME) {
-        usesService(s)
-        tasks.withType<SpotlessTask>().forEach {
-            targets.from(it.target)
-            val formatter =
-                Formatter.builder().steps(it.stepsInternalRoundtrip.steps)
-                    .lineEndingsPolicy(it.lineEndingsPolicy.get())
-                    .encoding(Charset.forName(it.encoding)).build()
-            formatterMapping.add(it.target to formatter)
+    gradle.allprojects {
+        val project = this
+        plugins.withType<SpotlessPlugin>().configureEach {
+
+            project.tasks.withType<SpotlessTask>().configureEach {
+                daemonTask.configure {
+                    targets.from(target)
+                    val formatter =
+                        Formatter.builder().steps(stepsInternalRoundtrip.steps)
+                            .lineEndingsPolicy(lineEndingsPolicy.get())
+                            .encoding(Charset.forName(encoding)).build()
+                    formatterMapping.add(target to formatter)
+                }
+            }
         }
     }
 
@@ -131,10 +140,10 @@ internal abstract class SpotlessDaemonTask @Inject constructor(private val layou
         val channel = Channel<Req>(Channel.UNLIMITED)
         server.application.routing {
             post("") {
-                action(channel)
+                action(channel, logger)
             }
             post("/stop") {
-                log.lifecycle("Stop requested; shutting down Spotless Daemon")
+                logger.lifecycle("Stop requested; shutting down Spotless Daemon")
                 call.respond(HttpStatusCode.OK)
                 channel.cancel()
             }
@@ -152,9 +161,9 @@ internal abstract class SpotlessDaemonTask @Inject constructor(private val layou
             try {
                 server.startSuspend(wait = false)
 
-                log.info("Spotless Daemon started; awaiting formatting requests")
+                logger.info("Spotless Daemon started; awaiting formatting requests")
 
-                mainLoop(channel, service.get())
+                mainLoop(channel, service.get(), logger)
 
             } catch (_: CancellationException) {
             } catch (e: Exception) {
@@ -170,21 +179,21 @@ internal abstract class SpotlessDaemonTask @Inject constructor(private val layou
 
 }
 
-internal suspend fun mainLoop(channel: Channel<Req>, service: FutureService) {
+internal suspend fun mainLoop(channel: Channel<Req>, service: FutureService, logger: Logger) {
     for ((path, content, future, dryrun) in channel) {
 
-        log.info("Received request for $path (dryrun=$dryrun)")
+        logger.info("Received request for $path (dryrun=$dryrun)")
 
 //        val id = service.putFuture(future)
 
         val formatter = service.getFormatterFor(path) ?: future.run {
-            log.info("File not covered by Spotless: $path")
+            logger.info("File not covered by Spotless: $path")
             complete(Resp.NotFormatted("File not covered by Spotless: $path", HttpStatusCode.NotFound))
             continue
         }
 
         if (dryrun) {
-            log.info("Dry run request succeeded for $path")
+            logger.info("Dry run request succeeded for $path")
             future.complete(Resp.NotFormatted("", HttpStatusCode.OK))
             continue
         }
@@ -194,16 +203,16 @@ internal suspend fun mainLoop(channel: Channel<Req>, service: FutureService) {
 
 
         if (state.isClean) {
-            log.info("File already clean: $path")
+            logger.info("File already clean: $path")
             future.complete(Resp.NotFormatted("", HttpStatusCode.OK))
             continue
         }
 
 
         if (state.didNotConverge()) {
-            log.info("Formatter did not converge for $path")
+            logger.info("Formatter did not converge for $path")
         } else {
-            log.info("Formatted $path")
+            logger.info("Formatted $path")
         }
 
         future.complete(Resp.Formatted(state, formatter.encoding))
@@ -224,7 +233,7 @@ internal data class Req(
     val dryrun: Boolean,
 )
 
-internal suspend fun RoutingContext.action(channel: Channel<Req>) {
+internal suspend fun RoutingContext.action(channel: Channel<Req>, logger: Logger) {
     val path = call.queryParameters["path"] ?: return call.respondText(
         "Missing path query parameter",
         status = HttpStatusCode.BadRequest,
@@ -232,7 +241,7 @@ internal suspend fun RoutingContext.action(channel: Channel<Req>) {
     val dryrun = call.queryParameters["dryrun"] != null
     val content = call.receiveText()
 
-    log.info("Handling request path=$path dryrun=$dryrun")
+    logger.info("Handling request path=$path dryrun=$dryrun")
 
     val future = CompletableDeferred<Resp>()
 
