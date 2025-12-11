@@ -69,10 +69,9 @@ private fun Project.configureRootTask() {
     }
 
     gradle.allprojects {
-        val project = this
         plugins.withType<SpotlessPlugin>().configureEach {
 
-            project.tasks.withType<SpotlessTask>().configureEach {
+            tasks.withType<SpotlessTask>().configureEach {
                 daemonTask.configure {
                     targets.from(target)
                     val formatter =
