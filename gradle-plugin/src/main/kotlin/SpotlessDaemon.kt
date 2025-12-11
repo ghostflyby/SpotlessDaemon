@@ -23,13 +23,15 @@ import kotlinx.coroutines.runBlocking
 import org.gradle.api.DefaultTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.logging.Logging
-import org.gradle.api.provider.MapProperty
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.services.ServiceReference
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 import org.gradle.kotlin.dsl.register
@@ -56,10 +58,22 @@ class SpotlessDaemon : Plugin<Project> {
 private val log = Logging.getLogger(SpotlessDaemon::class.java)
 
 private fun Project.apply() {
+
+    if (rootProject != this) {
+        return
+    }
     val s = gradle.sharedServices.registerIfAbsent("SpotlessDaemonBridgeService", FutureService::class.java) {}
 
     tasks.register<SpotlessDaemonTask>(SpotlessDaemon.SPOTLESS_DAEMON_TASK_NAME) {
         usesService(s)
+        tasks.withType<SpotlessTask>().forEach {
+            targets.from(it.target)
+            val formatter =
+                Formatter.builder().steps(it.stepsInternalRoundtrip.steps)
+                    .lineEndingsPolicy(it.lineEndingsPolicy.get())
+                    .encoding(Charset.forName(it.encoding)).build()
+            formatterMapping.add(it.target to formatter)
+        }
     }
 
 }
@@ -83,6 +97,12 @@ internal abstract class SpotlessDaemonTask @Inject constructor(private val layou
     @get:ServiceReference
     abstract val service: Property<FutureService>
 
+    @get:Input
+    abstract val formatterMapping: ListProperty<Pair<FileCollection, Formatter>>
+
+    @get:InputFiles
+    abstract val targets: ConfigurableFileCollection
+
     @TaskAction
     fun run() {
 
@@ -90,17 +110,6 @@ internal abstract class SpotlessDaemonTask @Inject constructor(private val layou
             unixsocket.isPresent -> "unix socket ${unixsocket.get()}"
             port.isPresent -> "port ${port.get()}"
             else -> "unknown address"
-        }
-        val targets = project.objects.fileCollection()
-        val formatterMapping: MapProperty<FileCollection, Formatter> =
-            project.objects.mapProperty(FileCollection::class.java, Formatter::class.java)
-        project.tasks.withType<SpotlessTask>().forEach {
-            targets.from(it.target)
-            val formatter =
-                Formatter.builder().steps(it.stepsInternalRoundtrip.steps)
-                    .lineEndingsPolicy(it.lineEndingsPolicy.get())
-                    .encoding(Charset.forName(it.encoding)).build()
-            formatterMapping.put(it.target, formatter)
         }
 
         logger.lifecycle("Starting Spotless Daemon on $listenDescription with ${targets.files.size} targets")

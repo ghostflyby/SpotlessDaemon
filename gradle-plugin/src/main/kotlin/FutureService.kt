@@ -12,7 +12,7 @@ import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileCollection
 import org.gradle.api.logging.Logging
-import org.gradle.api.provider.MapProperty
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
 import java.io.File
@@ -26,7 +26,7 @@ internal abstract class FutureService @Inject constructor() : BuildService<Futur
 
     internal interface FutureServiceParams : BuildServiceParameters {
         val fileCollection: ConfigurableFileCollection
-        val formatterMapping: MapProperty<FileCollection, Formatter>
+        val formatterMapping: ListProperty<Pair<FileCollection, Formatter>>
         val projectRoot: DirectoryProperty
     }
 
