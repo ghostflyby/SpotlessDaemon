@@ -6,6 +6,8 @@
 
 ### Changed
 
+- only register task in rootProject [#41](https://github.com/ghostflyby/SpotlessDaemon/pull/41)
+
 ### Deprecated
 
 ### Removed
