@@ -6,7 +6,6 @@
 
 package dev.ghostflyby.spotless.daemon
 
-import com.diffplug.gradle.spotless.SpotlessPlugin
 import com.diffplug.gradle.spotless.SpotlessTask
 import com.diffplug.spotless.DirtyState
 import com.diffplug.spotless.Formatter
@@ -32,6 +31,7 @@ import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.services.ServiceReference
 import org.gradle.api.tasks.*
+import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
 import org.gradle.work.DisableCachingByDefault
@@ -46,7 +46,19 @@ class SpotlessDaemon : Plugin<Project> {
             if (target.rootProject != target) {
                 return@withPlugin
             }
-            target.configureRootTask()
+            val serviceProvider =
+                target.gradle.sharedServices.registerIfAbsent(
+                    "SpotlessDaemonBridgeService",
+                    FutureService::class.java,
+                ) {}
+
+            target.tasks.register<SpotlessDaemonTask>(SPOTLESS_DAEMON_TASK_NAME) {
+                usesService(serviceProvider)
+            }
+
+            target.afterEvaluate {
+                target.configureRootTask()
+            }
         }
     }
 
@@ -56,27 +68,19 @@ class SpotlessDaemon : Plugin<Project> {
     }
 }
 
-private fun Project.configureRootTask() {
+private fun Project.configureRootTask() = afterEvaluate {
 
-    val serviceProvider =
-        gradle.sharedServices.registerIfAbsent("SpotlessDaemonBridgeService", FutureService::class.java) {}
-
-    val daemonTask = tasks.register<SpotlessDaemonTask>(SpotlessDaemon.SPOTLESS_DAEMON_TASK_NAME) {
-        usesService(serviceProvider)
-    }
+    val daemonTask = tasks.named<SpotlessDaemonTask>(SpotlessDaemon.SPOTLESS_DAEMON_TASK_NAME)
 
     rootProject.allprojects {
-        plugins.withType<SpotlessPlugin>().configureEach {
-
-            tasks.withType<SpotlessTask>().configureEach {
-                daemonTask.configure {
-                    targets.from(target)
-                    val formatter =
-                        Formatter.builder().steps(stepsInternalRoundtrip.steps)
-                            .lineEndingsPolicy(lineEndingsPolicy.get())
-                            .encoding(Charset.forName(encoding)).build()
-                    formatterMapping.add(target to formatter)
-                }
+        tasks.withType<SpotlessTask>().forEach {
+            daemonTask.configure {
+                targets.from(it.target)
+                val formatter =
+                    Formatter.builder().steps(it.stepsInternalRoundtrip.steps)
+                        .lineEndingsPolicy(it.lineEndingsPolicy.get())
+                        .encoding(Charset.forName(it.encoding)).build()
+                formatterMapping.add(it.target to formatter)
             }
         }
     }

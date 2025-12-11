@@ -10,6 +10,7 @@ import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -47,6 +48,13 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: Path)
                 id("dev.ghostflyby.spotless.daemon")
             }
             
+            spotless {
+                format("misc") {
+                    target("*.txt")
+                    trimTrailingWhitespace()
+                    endWithNewline()
+                }
+            }
             """.trimIndent(),
         )
     }
@@ -81,6 +89,23 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: Path)
                 }
             }
         }
+    }
+
+    private fun startDaemonAndAwait(): Thread {
+        val t = startRunner()
+        runBlocking {
+            repeat(60) { attempt ->
+                try {
+                    val response = http.get("")
+                    assertEquals(HttpStatusCode.OK, response.status, "Should respond with 200 OK")
+                    return@runBlocking
+                } catch (e: Exception) {
+                    if (attempt == 59) throw e
+                    delay(500)
+                }
+            }
+        }
+        return t
     }
 
 
@@ -145,5 +170,68 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: Path)
         }
         t.join()
     }
-}
 
+    @Test
+    @Timeout(60)
+    fun `post missing path returns bad request`(): Unit = runBlocking {
+        val t = startDaemonAndAwait()
+
+        try {
+            val response = http.post("") {
+                setBody("example content")
+            }
+            assertEquals(HttpStatusCode.BadRequest, response.status, "Should respond with 400 when path missing")
+        } finally {
+            val stop = http.post("/stop")
+            assertEquals(HttpStatusCode.OK, stop.status, "Should respond with 200 OK on stop")
+            t.join()
+        }
+    }
+
+    @Test
+    @Timeout(60)
+    fun `post path not covered returns not found`(): Unit = runBlocking {
+        val uncovered = projectDir.resolve("uncovered.kt")
+        Files.writeString(uncovered, "fun example() = 1")
+
+        val t = startDaemonAndAwait()
+
+        try {
+            val response = http.post("") {
+                url { parameters.append("path", uncovered.toString()) }
+                setBody("fun example() = 1")
+            }
+            assertEquals(
+                HttpStatusCode.NotFound,
+                response.status,
+                "Should respond with 404 for files not covered by Spotless",
+            )
+        } finally {
+            val stop = http.post("/stop")
+            assertEquals(HttpStatusCode.OK, stop.status, "Should respond with 200 OK on stop")
+            t.join()
+        }
+    }
+
+    @Test
+    @Timeout(60)
+    fun `post formats covered file and returns content`(): Unit = runBlocking {
+        val targetFile = projectDir.resolve("sample.txt")
+        Files.writeString(targetFile, "hello world  ")
+
+        val t = startDaemonAndAwait()
+
+        try {
+            val response = http.post("") {
+                url { parameters.append("path", targetFile.toString()) }
+                setBody("hello world  ")
+            }
+            assertEquals(HttpStatusCode.OK, response.status, "Should respond with 200 for covered files")
+            assertEquals("hello world\n", response.bodyAsText(), "Should return formatted content")
+        } finally {
+            val stop = http.post("/stop")
+            assertEquals(HttpStatusCode.OK, stop.status, "Should respond with 200 OK on stop")
+            t.join()
+        }
+    }
+}
