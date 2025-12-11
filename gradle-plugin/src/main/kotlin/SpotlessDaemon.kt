@@ -68,7 +68,7 @@ private fun Project.configureRootTask() {
         usesService(serviceProvider)
     }
 
-    gradle.allprojects {
+    rootProject.allprojects {
         plugins.withType<SpotlessPlugin>().configureEach {
 
             tasks.withType<SpotlessTask>().configureEach {
