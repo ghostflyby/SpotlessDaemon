@@ -6,8 +6,6 @@
 
 ### Changed
 
-- only register task in rootProject [#41](https://github.com/ghostflyby/SpotlessDaemon/pull/41)
-
 ### Deprecated
 
 ### Removed
@@ -15,6 +13,12 @@
 ### Fixed
 
 ### Security
+
+## 0.3.0 - 2025-12-11
+
+### Changed
+
+- only register task in rootProject [#41](https://github.com/ghostflyby/SpotlessDaemon/pull/41)
 
 ## 0.2.7 - 2025-12-02
 
