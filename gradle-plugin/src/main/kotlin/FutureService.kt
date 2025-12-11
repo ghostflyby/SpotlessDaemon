@@ -41,7 +41,11 @@ internal abstract class FutureService @Inject constructor() : BuildService<Futur
         if (targets.contains(absFile)) {
             return getFormatterFor(absFile)
         }
-        return getFormatterFor(relativeFile) ?: getFormatterFor(File(file))
+        val realPath = relativeFile.toPath().toRealPath().toFile()
+        if (targets.contains(realPath)) {
+            return getFormatterFor(realPath)
+        }
+        return null
     }
 
     private val map = ConcurrentHashMap<UUID, CompletableDeferred<Resp>>()
