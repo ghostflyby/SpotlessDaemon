@@ -105,7 +105,7 @@ internal abstract class SpotlessDaemonTask @Inject constructor(private val layou
     @get:ServiceReference
     abstract val service: Property<FutureService>
 
-    @get:Input
+    @get:Internal
     abstract val formatterMapping: ListProperty<Pair<FileCollection, Formatter>>
 
     @get:InputFiles
