@@ -7,6 +7,7 @@
 ### Changed
 
 - remove unused properties from SpotlessDaemon [#39](https://github.com/ghostflyby/SpotlessDaemon/pull/39)
+- only register task in rootProject [#41](https://github.com/ghostflyby/SpotlessDaemon/pull/41)
 
 ### Deprecated
 
