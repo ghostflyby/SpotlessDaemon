@@ -4,9 +4,6 @@
 
 ### Added
 
-- add encoding endpoint with error handling and response
-  types [#44](https://github.com/ghostflyby/SpotlessDaemon/pull/44)
-
 ### Changed
 
 ### Deprecated
@@ -16,6 +13,13 @@
 ### Fixed
 
 ### Security
+
+## 0.4.0 - 2025-12-12
+
+### Added
+
+- add encoding endpoint with error handling and response
+  types [#44](https://github.com/ghostflyby/SpotlessDaemon/pull/44)
 
 ## 0.3.0 - 2025-12-11
 
