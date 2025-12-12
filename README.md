@@ -34,6 +34,12 @@ The task will block, running the daemon until interrupted.
 
 * `200 OK` as a health check
 
+#### GET /encoding?path={path}
+
+* `400 Bad Request` if `path` parameter is missing
+* `404 Not Found` if file not covered by spotless, either no such file or not included in config.
+* `200 OK` with encoding name as `text/plain` in body if successful
+
 #### POST /?path={path}
 
 * `404 Not Found` if file not covered by spotless, either no such file or not included in config.

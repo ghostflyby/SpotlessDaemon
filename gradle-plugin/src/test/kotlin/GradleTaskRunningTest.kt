@@ -198,7 +198,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: Path)
 
         try {
             val response = http.post("") {
-                url { parameters.append("path", uncovered.toString()) }
+                url { parameters.append("path", projectDir.relativize(uncovered).toString()) }
                 setBody("fun example() = 1")
             }
             assertEquals(
@@ -223,11 +223,71 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: Path)
 
         try {
             val response = http.post("") {
-                url { parameters.append("path", targetFile.toString()) }
+                url { parameters.append("path", projectDir.relativize(targetFile).toString()) }
                 setBody("hello world  ")
             }
             assertEquals(HttpStatusCode.OK, response.status, "Should respond with 200 for covered files")
             assertEquals("hello world\n", response.bodyAsText(), "Should return formatted content")
+        } finally {
+            val stop = http.post("/stop")
+            assertEquals(HttpStatusCode.OK, stop.status, "Should respond with 200 OK on stop")
+            t.join()
+        }
+    }
+
+    @Test
+    @Timeout(60)
+    fun `get encoding missing path returns bad request`(): Unit = runBlocking {
+        val t = startDaemonAndAwait()
+
+        try {
+            val response = http.get("/encoding")
+            assertEquals(HttpStatusCode.BadRequest, response.status, "Should respond with 400 when path missing")
+        } finally {
+            val stop = http.post("/stop")
+            assertEquals(HttpStatusCode.OK, stop.status, "Should respond with 200 OK on stop")
+            t.join()
+        }
+    }
+
+    @Test
+    @Timeout(60)
+    fun `get encoding not covered returns not found`(): Unit = runBlocking {
+        val uncovered = projectDir.resolve("uncovered.kt")
+        Files.writeString(uncovered, "fun example() = 1")
+
+        val t = startDaemonAndAwait()
+
+        try {
+            val response = http.get("/encoding") {
+                url { parameters.append("path", projectDir.relativize(uncovered).toString()) }
+            }
+            assertEquals(
+                HttpStatusCode.NotFound,
+                response.status,
+                "Should respond with 404 for files not covered by Spotless",
+            )
+        } finally {
+            val stop = http.post("/stop")
+            assertEquals(HttpStatusCode.OK, stop.status, "Should respond with 200 OK on stop")
+            t.join()
+        }
+    }
+
+    @Test
+    @Timeout(60)
+    fun `get encoding returns charset for covered file`(): Unit = runBlocking {
+        val targetFile = projectDir.resolve("sample.txt")
+        Files.writeString(targetFile, "hello world  ")
+
+        val t = startDaemonAndAwait()
+
+        try {
+            val response = http.get("/encoding") {
+                url { parameters.append("path", projectDir.relativize(targetFile).toString()) }
+            }
+            assertEquals(HttpStatusCode.OK, response.status, "Should respond with 200 for covered files")
+            assertEquals("UTF-8", response.bodyAsText(), "Should return encoding name")
         } finally {
             val stop = http.post("/stop")
             assertEquals(HttpStatusCode.OK, stop.status, "Should respond with 200 OK on stop")
