@@ -138,6 +138,7 @@ internal abstract class SpotlessDaemonTask @Inject constructor(private val layou
         }
 
         val channel = Channel<Req>(Channel.UNLIMITED)
+        val serviceInstance = service.get()
         server.application.routing {
             post("") {
                 action(channel, logger)
@@ -149,6 +150,21 @@ internal abstract class SpotlessDaemonTask @Inject constructor(private val layou
             }
             get("") {
                 call.respondText("Spotless Daemon is running.")
+            }
+            get("/encoding") {
+                val path = call.queryParameters["path"] ?: return@get call.respondText(
+                    "Missing path query parameter",
+                    status = HttpStatusCode.BadRequest,
+                )
+
+                val formatter = serviceInstance.getFormatterFor(path)
+
+                if (formatter == null) {
+                    call.respondText("File not covered by Spotless: $path", status = HttpStatusCode.NotFound)
+                    return@get
+                }
+
+                call.respondText(formatter.encoding.name(), ContentType.Text.Plain.withCharset(formatter.encoding))
             }
         }
 
