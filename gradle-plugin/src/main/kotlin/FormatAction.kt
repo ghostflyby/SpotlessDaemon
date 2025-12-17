@@ -8,7 +8,6 @@ package dev.ghostflyby.spotless.daemon
 
 import com.diffplug.spotless.DirtyState
 import io.ktor.http.*
-import io.ktor.utils.io.*
 import org.gradle.api.logging.Logging
 import org.gradle.workers.WorkAction
 import java.io.File
@@ -62,14 +61,15 @@ internal abstract class FormatAction @Inject constructor() : WorkAction<FormatPa
         try {
             future.complete(run())
         } catch (t: Throwable) {
-            if (t !is CancellationException) {
-                logger.error("Error formatting file ${parameters.path.get()}: ${t.message}", t)
-                future.complete(
-                    Resp.NotFormatted(
-                        "Error formatting file: ${t.message}",
-                        HttpStatusCode.InternalServerError,
-                    ),
-                )
+            logger.error("Error formatting file ${parameters.path.get()}: ${t.message}", t)
+            future.complete(
+                Resp.NotFormatted(
+                    "Error formatting file: ${t.message}",
+                    HttpStatusCode.InternalServerError,
+                ),
+            )
+            if (t is InterruptedException) {
+                throw t
             }
         }
     }
