@@ -35,7 +35,7 @@ import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
 import org.gradle.work.DisableCachingByDefault
-import java.io.File
+import org.gradle.workers.WorkerExecutor
 import java.nio.charset.Charset
 import javax.inject.Inject
 
@@ -88,7 +88,10 @@ private fun Project.configureRootTask() = afterEvaluate {
 }
 
 @DisableCachingByDefault(because = "Daemon-like task; no reproducible outputs")
-internal abstract class SpotlessDaemonTask @Inject constructor(private val layout: ProjectLayout) : DefaultTask() {
+internal abstract class SpotlessDaemonTask @Inject constructor(
+    private val layout: ProjectLayout,
+    private val worker: WorkerExecutor,
+) : DefaultTask() {
 
     init {
         unixsocket.convention(project.providers.gradleProperty("dev.ghostflyby.spotless.daemon.unixsocket"))
@@ -179,7 +182,7 @@ internal abstract class SpotlessDaemonTask @Inject constructor(private val layou
 
                 logger.info("Spotless Daemon started; awaiting formatting requests")
 
-                mainLoop(channel, service.get(), logger)
+                mainLoop(channel, service, logger, worker)
 
             } catch (_: CancellationException) {
             } catch (e: Exception) {
@@ -195,50 +198,27 @@ internal abstract class SpotlessDaemonTask @Inject constructor(private val layou
 
 }
 
-internal suspend fun mainLoop(channel: Channel<Req>, service: FutureService, logger: Logger) {
+internal suspend fun mainLoop(
+    channel: Channel<Req>,
+    service: Property<FutureService>,
+    logger: Logger,
+    worker: WorkerExecutor,
+) {
     for ((path, content, future, dryrun) in channel) {
 
         logger.info("Received request for $path (dryrun=$dryrun)")
 
-//        val id = service.putFuture(future)
+        val id = service.get().putFuture(future)
 
-        val formatter = service.getFormatterFor(path) ?: future.run {
-            logger.info("File not covered by Spotless: $path")
-            complete(Resp.NotFormatted("File not covered by Spotless: $path", HttpStatusCode.NotFound))
-            continue
+
+        worker.noIsolation().submit(FormatAction::class.java) {
+            this.path.set(path)
+            this.content.set(content)
+            fileService.set(service)
+            reply.set(id)
+            this.dryrun.set(dryrun)
         }
 
-        if (dryrun) {
-            logger.info("Dry run request succeeded for $path")
-            future.complete(Resp.NotFormatted("", HttpStatusCode.OK))
-            continue
-        }
-
-        val bytes = content.toByteArray(formatter.encoding)
-        val state = DirtyState.of(formatter, File(path), bytes, content)
-
-
-        if (state.isClean) {
-            logger.info("File already clean: $path")
-            future.complete(Resp.NotFormatted("", HttpStatusCode.OK))
-            continue
-        }
-
-
-        if (state.didNotConverge()) {
-            logger.info("Formatter did not converge for $path")
-        } else {
-            logger.info("Formatted $path")
-        }
-
-        future.complete(Resp.Formatted(state, formatter.encoding))
-
-//                worker.noIsolation().submit(FormatAction::class.java) {
-//                    this.path.set(path)
-//                    this.content.set(content)
-//                    fileService.set(service)
-//                    reply.set(id)
-//                }
     }
 }
 

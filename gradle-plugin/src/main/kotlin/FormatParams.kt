@@ -15,4 +15,5 @@ internal interface FormatParams : WorkParameters {
     val content: Property<String>
     val reply: Property<UUID>
     val fileService: Property<FutureService>
+    val dryrun: Property<Boolean>
 }
