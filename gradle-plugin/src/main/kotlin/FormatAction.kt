@@ -15,7 +15,7 @@ import javax.inject.Inject
 
 internal abstract class FormatAction @Inject constructor() : WorkAction<FormatParams> {
 
-    private val log = Logging.getLogger(FormatAction::class.java)
+    private val logger = Logging.getLogger(FormatAction::class.java)
 
     override fun execute() {
 
@@ -23,28 +23,40 @@ internal abstract class FormatAction @Inject constructor() : WorkAction<FormatPa
 
         val service = parameters.fileService.get()
 
-        val reply = service.getReplyFuture(parameters.reply.get())
-
-
-        val formatter = service.getFormatterFor(path) ?: return reply.run {
-            log.info("File not covered by Spotless: $path")
-            complete(Resp.NotFormatted("File not covered by Spotless: $path", HttpStatusCode.NotFound))
-        }
+        val future = service.getReplyFuture(parameters.reply.get())
 
         val content = parameters.content.get()
+        val dryrun = parameters.dryrun.get()
+
+        val formatter = service.getFormatterFor(path) ?: future.run {
+            logger.info("File not covered by Spotless: $path")
+            complete(Resp.NotFormatted("File not covered by Spotless: $path", HttpStatusCode.NotFound))
+            return
+        }
+
+        if (dryrun) {
+            logger.info("Dry run request succeeded for $path")
+            future.complete(Resp.NotFormatted("", HttpStatusCode.OK))
+            return
+        }
+
         val bytes = content.toByteArray(formatter.encoding)
         val state = DirtyState.of(formatter, File(path), bytes, content)
 
 
         if (state.isClean) {
-            log.info("File already clean: $path")
-            reply.complete(Resp.NotFormatted("", HttpStatusCode.OK))
+            logger.info("File already clean: $path")
+            future.complete(Resp.NotFormatted("", HttpStatusCode.OK))
             return
         }
 
 
+        if (state.didNotConverge()) {
+            logger.info("Formatter did not converge for $path")
+        } else {
+            logger.info("Formatted $path")
+        }
 
-        log.info("Formatted $path")
-        reply.complete(Resp.Formatted(state, formatter.encoding))
+        future.complete(Resp.Formatted(state, formatter.encoding))
     }
 }
