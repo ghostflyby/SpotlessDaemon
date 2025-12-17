@@ -6,6 +6,8 @@
 
 ### Changed
 
+- use WorkerAction to run formatters [#47](https://github.com/ghostflyby/SpotlessDaemon/pull/47)
+
 ### Deprecated
 
 ### Removed
