@@ -9,6 +9,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     `kotlin-dsl`
     signing
+    alias(libs.plugins.shadow)
     alias(libs.plugins.gradle.plugin.publish)
 }
 
@@ -27,9 +28,12 @@ gradlePlugin {
     }
 }
 
+val shadowClasspath by configurations.creating
+
 dependencies {
     implementation(libs.spotless)
     implementation(libs.bundles.ktor.server)
+    shadowClasspath(libs.bundles.ktor.server)
     testImplementation(libs.bundles.ktor.client)
     testCompileOnly(libs.junit.api)
     testRuntimeOnly(libs.junit.engine)
@@ -59,6 +63,18 @@ tasks.publish {
 
 tasks.withType<Jar> {
     archiveBaseName = "spotless-daemon-gradle-plugin"
+}
+
+tasks.shadowJar {
+    enableAutoRelocation = true
+    relocationPrefix = "dev.ghostflyby.spotless.daemon.shadow"
+    archiveClassifier = ""
+    minimizeJar = true
+    configurations.set(listOf(shadowClasspath))
+    dependencies {
+        exclude(dependency("org.jetbrains.kotlin:kotlin-stdlib"))
+        exclude(dependency("org.jetbrains.kotlin:kotlin-reflect"))
+    }
 }
 
 tasks.withType<Test> {
