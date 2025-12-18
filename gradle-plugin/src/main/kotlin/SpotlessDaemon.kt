@@ -22,7 +22,6 @@ import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
 import org.gradle.work.DisableCachingByDefault
-import org.gradle.workers.WorkerExecutor
 import java.nio.charset.Charset
 import javax.inject.Inject
 
@@ -68,10 +67,7 @@ private fun Project.configureRootTask() = afterEvaluate {
 }
 
 @DisableCachingByDefault(because = "Daemon-like task; no reproducible outputs")
-internal abstract class SpotlessDaemonTask @Inject constructor(
-    private val layout: ProjectLayout,
-    private val worker: WorkerExecutor,
-) : DefaultTask() {
+internal abstract class SpotlessDaemonTask @Inject constructor(private val layout: ProjectLayout) : DefaultTask() {
 
     init {
         unixsocket.convention(project.providers.gradleProperty("dev.ghostflyby.spotless.daemon.unixsocket"))
@@ -102,28 +98,8 @@ internal abstract class SpotlessDaemonTask @Inject constructor(
 
         logger.lifecycle("Starting Spotless Daemon on $listenDescription with ${targets.files.size} targets")
 
-//        val requestPipe = Pipe.open()
-//        ObjectOutputStream(Channels.newOutputStream(requestPipe.sink())).apply { flush() }
-//        val requestReceiver = ObjectInputStream(Channels.newInputStream(requestPipe.source()))
-//
-//
-//        val replyPipe = Pipe.open()
-//        ObjectOutputStream(Channels.newOutputStream(replyPipe.sink())).apply { flush() }
-//        ObjectInputStream(Channels.newInputStream(replyPipe.source()))
-//
-
-        worker.noIsolation()
-
         try {
             logger.info("Spotless Daemon started; awaiting formatting requests")
-//            queue.submit(KtorHttpAction::class.java) {
-//                this.unixsocket.set(unixsocket)
-//                this.port.set(port)
-//                this.targets.from(targets)
-//                this.formatterMapping.set(this@SpotlessDaemonTask.formatterMapping)
-//                this.projectRoot.set(layout.projectDirectory)
-//            }
-//            queue.await()
             KtorHttpAction(
                 port = port,
                 unixsocket = unixsocket,

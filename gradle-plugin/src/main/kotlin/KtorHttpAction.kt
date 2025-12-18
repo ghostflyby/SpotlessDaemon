@@ -24,7 +24,6 @@ import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
-import org.gradle.problems.internal.impl.logger
 import java.io.File
 import java.nio.charset.Charset
 
@@ -36,10 +35,9 @@ internal class KtorHttpAction(
     val projectRoot: Directory,
 ) {
 
-    private val log = Logging.getLogger(KtorHttpAction::class.java)
+    private val logger = Logging.getLogger(KtorHttpAction::class.java)
 
     fun execute() {
-        val unixsocket = unixsocket
 
         val server = embeddedServer(
             CIO,
@@ -57,10 +55,10 @@ internal class KtorHttpAction(
 
         server.application.routing {
             post("") {
-                action(logger)
+                action(org.gradle.problems.internal.impl.logger)
             }
             post("/stop") {
-                logger.lifecycle("Stop requested; shutting down Spotless Daemon")
+                org.gradle.problems.internal.impl.logger.lifecycle("Stop requested; shutting down Spotless Daemon")
                 call.respond(HttpStatusCode.OK)
                 server.stop(1000, 2000)
             }
@@ -89,8 +87,7 @@ internal class KtorHttpAction(
 
     fun getFormatterFor(file: String): Formatter? {
         val relativeFile = projectRoot.file(file).asFile
-        val targets = targets
-        log.info("all known files: ${targets.files.joinToString("\n")}")
+        logger.info("all known files: ${targets.files.joinToString("\n")}")
         if (targets.contains(relativeFile)) {
             return getFormatterFor(relativeFile)
         }
@@ -98,7 +95,14 @@ internal class KtorHttpAction(
         if (targets.contains(absFile)) {
             return getFormatterFor(absFile)
         }
-        val realPath = relativeFile.toPath().toRealPath().toFile()
+
+        val realPath = try {
+            relativeFile.toPath().toRealPath().toFile()
+        } catch (_: java.nio.file.NoSuchFileException) {
+            logger.info("File does not exist for real path resolution: ${relativeFile.path}")
+            return null
+        }
+
         if (targets.contains(realPath)) {
             return getFormatterFor(realPath)
         }
@@ -111,11 +115,11 @@ internal class KtorHttpAction(
         val mapping = formatterMapping.get()
         for ((key, value) in mapping) {
             if (key.contains(file)) {
-                log.info("Resolved formatter for ${file.absolutePath}")
+                logger.info("Resolved formatter for ${file.absolutePath}")
                 return value
             }
         }
-        log.info("No formatter mapping found for ${file.absolutePath}")
+        logger.info("No formatter mapping found for ${file.absolutePath}")
         return null
     }
 
@@ -154,12 +158,12 @@ internal class KtorHttpAction(
 
     fun run(path: String, dryrun: Boolean, content: String): Resp {
         val formatter = getFormatterFor(path) ?: run {
-            logger.info("File not covered by Spotless: $path")
+            org.gradle.problems.internal.impl.logger.info("File not covered by Spotless: $path")
             return Resp.NotFormatted("File not covered by Spotless: $path", HttpStatusCode.NotFound)
         }
 
         if (dryrun) {
-            logger.info("Dry run request succeeded for $path")
+            org.gradle.problems.internal.impl.logger.info("Dry run request succeeded for $path")
             return Resp.NotFormatted("", HttpStatusCode.OK)
         }
 
@@ -168,15 +172,15 @@ internal class KtorHttpAction(
 
 
         if (state.isClean) {
-            logger.info("File already clean: $path")
+            org.gradle.problems.internal.impl.logger.info("File already clean: $path")
             return Resp.NotFormatted("", HttpStatusCode.OK)
         }
 
 
         if (state.didNotConverge()) {
-            logger.info("Formatter did not converge for $path")
+            org.gradle.problems.internal.impl.logger.info("Formatter did not converge for $path")
         } else {
-            logger.info("Formatted $path")
+            org.gradle.problems.internal.impl.logger.info("Formatted $path")
         }
 
         return Resp.Formatted(state, formatter.encoding)
