@@ -7,35 +7,21 @@
 package dev.ghostflyby.spotless.daemon
 
 import com.diffplug.gradle.spotless.SpotlessTask
-import com.diffplug.spotless.DirtyState
 import com.diffplug.spotless.Formatter
-import io.ktor.http.*
-import io.ktor.server.application.*
-import io.ktor.server.cio.*
-import io.ktor.server.engine.*
-import io.ktor.server.request.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.runBlocking
 import org.gradle.api.DefaultTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.ProjectLayout
-import org.gradle.api.logging.Logger
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
-import org.gradle.api.services.ServiceReference
 import org.gradle.api.tasks.*
 import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
 import org.gradle.work.DisableCachingByDefault
-import org.gradle.workers.WorkerExecutor
 import java.nio.charset.Charset
 import javax.inject.Inject
 
@@ -46,15 +32,8 @@ class SpotlessDaemon : Plugin<Project> {
             if (target.rootProject != target) {
                 return@withPlugin
             }
-            val serviceProvider =
-                target.gradle.sharedServices.registerIfAbsent(
-                    "SpotlessDaemonBridgeService",
-                    FutureService::class.java,
-                ) {}
 
-            target.tasks.register<SpotlessDaemonTask>(SPOTLESS_DAEMON_TASK_NAME) {
-                usesService(serviceProvider)
-            }
+            target.tasks.register<SpotlessDaemonTask>(SPOTLESS_DAEMON_TASK_NAME)
 
             target.afterEvaluate {
                 target.configureRootTask()
@@ -88,10 +67,7 @@ private fun Project.configureRootTask() = afterEvaluate {
 }
 
 @DisableCachingByDefault(because = "Daemon-like task; no reproducible outputs")
-internal abstract class SpotlessDaemonTask @Inject constructor(
-    private val layout: ProjectLayout,
-    private val worker: WorkerExecutor,
-) : DefaultTask() {
+internal abstract class SpotlessDaemonTask @Inject constructor(private val layout: ProjectLayout) : DefaultTask() {
 
     init {
         unixsocket.convention(project.providers.gradleProperty("dev.ghostflyby.spotless.daemon.unixsocket"))
@@ -106,9 +82,6 @@ internal abstract class SpotlessDaemonTask @Inject constructor(
     @get:Optional
     abstract val port: Property<Int>
 
-    @get:ServiceReference
-    abstract val service: Property<FutureService>
-
     @get:Internal
     abstract val formatterMapping: ListProperty<Pair<FileCollection, Formatter>>
 
@@ -120,151 +93,28 @@ internal abstract class SpotlessDaemonTask @Inject constructor(
 
         val listenDescription = when {
             unixsocket.isPresent -> "unix socket ${unixsocket.get()}"
-            port.isPresent -> "port ${port.get()}"
-            else -> "unknown address"
+            else -> "port ${port.get()}"
         }
 
         logger.lifecycle("Starting Spotless Daemon on $listenDescription with ${targets.files.size} targets")
 
-        val server = embeddedServer(
-            CIO,
-            configure = {
-                if (unixsocket.isPresent) unixConnector(unixsocket.get()) {
-                }
-                else connector {
-                    port = this@SpotlessDaemonTask.port.get()
-                    host = "127.0.0.1"
-                }
-            },
-        ) {
-            install(IgnoreTrailingSlash)
-        }
+        try {
+            logger.info("Spotless Daemon started; awaiting formatting requests")
+            KtorHttpAction(
+                port = port,
+                unixsocket = unixsocket,
+                formatterMapping = formatterMapping,
+                targets = targets,
+                projectRoot = layout.projectDirectory,
+            ).execute()
 
-        val channel = Channel<Req>(Channel.UNLIMITED)
-        val serviceInstance = service.get()
-        server.application.routing {
-            post("") {
-                action(channel, logger)
-            }
-            post("/stop") {
-                logger.lifecycle("Stop requested; shutting down Spotless Daemon")
-                call.respond(HttpStatusCode.OK)
-                channel.cancel()
-            }
-            get("") {
-                call.respondText("Spotless Daemon is running.")
-            }
-            get("/encoding") {
-                val path = call.queryParameters["path"] ?: return@get call.respondText(
-                    "Missing path query parameter",
-                    status = HttpStatusCode.BadRequest,
-                )
-
-                val formatter = serviceInstance.getFormatterFor(path)
-
-                if (formatter == null) {
-                    call.respondText("File not covered by Spotless: $path", status = HttpStatusCode.NotFound)
-                    return@get
-                }
-
-                call.respondText(formatter.encoding.name(), ContentType.Text.Plain.withCharset(formatter.encoding))
-            }
-        }
-
-        val param = service.get().parameters
-        param.projectRoot.set(layout.projectDirectory)
-        param.fileCollection.from(targets)
-        param.formatterMapping.set(formatterMapping)
-
-        runBlocking {
-            try {
-                server.startSuspend(wait = false)
-
-                logger.info("Spotless Daemon started; awaiting formatting requests")
-
-                mainLoop(channel, service, logger, worker)
-
-            } catch (_: CancellationException) {
-            } catch (e: Exception) {
-                logger.error("Spotless Daemon encountered an error", e)
-            } finally {
-                channel.close()
-                server.stopSuspend(1000, 2000)
-                logger.lifecycle("Spotless Daemon stopped")
-            }
+        } catch (_: CancellationException) {
+        } catch (e: Exception) {
+            logger.error("Spotless Daemon encountered an error", e)
+        } finally {
+            logger.lifecycle("Spotless Daemon stopped")
         }
 
     }
 
-}
-
-internal suspend fun mainLoop(
-    channel: Channel<Req>,
-    service: Property<FutureService>,
-    logger: Logger,
-    worker: WorkerExecutor,
-) {
-    for ((path, content, future, dryrun) in channel) {
-
-        logger.info("Received request for $path (dryrun=$dryrun)")
-
-        val id = service.get().putFuture(future)
-
-
-        worker.noIsolation().submit(FormatAction::class.java) {
-            this.path.set(path)
-            this.content.set(content)
-            fileService.set(service)
-            reply.set(id)
-            this.dryrun.set(dryrun)
-        }
-
-    }
-}
-
-internal data class Req(
-    val path: String,
-    val content: String,
-    val future: CompletableDeferred<Resp>,
-    val dryrun: Boolean,
-)
-
-internal suspend fun RoutingContext.action(channel: Channel<Req>, logger: Logger) {
-    val path = call.queryParameters["path"] ?: return call.respondText(
-        "Missing path query parameter",
-        status = HttpStatusCode.BadRequest,
-    )
-    val dryrun = call.queryParameters["dryrun"] != null
-    val content = call.receiveText()
-
-    logger.info("Handling request path=$path dryrun=$dryrun")
-
-    val future = CompletableDeferred<Resp>()
-
-    channel.send(Req(path, content, future, dryrun))
-
-    val result = future.await()
-
-    if (result is Resp.NotFormatted) {
-        call.respondText(result.content, status = result.status)
-        return
-    }
-
-    val (state, charset) = (result as Resp.Formatted)
-
-
-    val code = if (state.didNotConverge()) {
-        HttpStatusCode.InternalServerError
-    } else {
-        HttpStatusCode.OK
-    }
-    call.respondOutputStream(contentType = ContentType.Text.Plain.withCharset(charset), status = code) {
-        state.writeCanonicalTo(this)
-    }
-
-}
-
-internal sealed interface Resp {
-    data class NotFormatted(val content: String, val status: HttpStatusCode) : Resp
-    data class Formatted(val state: DirtyState, val charset: Charset) : Resp
 }

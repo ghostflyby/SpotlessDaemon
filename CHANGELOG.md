@@ -7,6 +7,8 @@
 ### Changed
 
 - use WorkerAction to run formatters [#47](https://github.com/ghostflyby/SpotlessDaemon/pull/47)
+- shadow ktor and utilize simple shared state based
+  concurrency [#49](https://github.com/ghostflyby/SpotlessDaemon/pull/49)
 
 ### Deprecated
 
