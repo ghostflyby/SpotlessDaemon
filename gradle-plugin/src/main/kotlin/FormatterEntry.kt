@@ -13,6 +13,5 @@ import java.io.File
 internal data class FormatterEntry(
     val files: FileCollection,
     val formatter: Formatter,
-    val projectPath: String,
     val projectDir: File,
 )

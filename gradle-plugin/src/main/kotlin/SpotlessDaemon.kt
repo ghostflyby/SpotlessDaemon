@@ -65,7 +65,6 @@ private fun Project.configureRootTask() = afterEvaluate {
                     FormatterEntry(
                         files = it.target,
                         formatter = formatter,
-                        projectPath = path,
                         projectDir = projectDir,
                     ),
                 )

@@ -115,7 +115,7 @@ internal class KtorHttpAction(
     private fun getFormatterFor(file: File): Formatter? {
         for (entry in formatterMapping) {
             if (entry.files.contains(file)) {
-                logger.info("Resolved formatter for ${file.absolutePath} from project ${entry.projectPath}")
+                logger.info("Resolved formatter for ${file.absolutePath} from project ${entry.projectDir}")
                 return entry.formatter
             }
         }
