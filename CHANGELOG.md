@@ -14,6 +14,17 @@
 
 ### Security
 
+## 0.5.3 - 2025-12-20
+
+### Added
+
+- test coverage for java formatter that pulls external deps [#??]()
+
+### Changed
+
+- run Ktor server in worker-isolated classpath while keeping main loop on task thread [#??]()
+- pre-sort formatter mappings by subproject depth to favor nested Spotless configs with a single pass [#??]()
+
 ## 0.5.2 - 2025-12-19
 
 ### Changed
