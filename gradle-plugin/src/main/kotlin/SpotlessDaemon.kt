@@ -127,6 +127,7 @@ internal abstract class SpotlessDaemonTask @Inject constructor(private val layou
 internal class TaskMainDispatcher : CoroutineDispatcher() {
     private val queue = ArrayBlockingQueue<Runnable>(40)
 
+    @Volatile
     private var stopped = false
     private var thread: Thread? = null
 
@@ -141,9 +142,20 @@ internal class TaskMainDispatcher : CoroutineDispatcher() {
 
     fun mainLoop() {
         thread = Thread.currentThread()
-        while (!stopped) {
-            val block = queue.take()
-            block.run()
+        try {
+            while (!stopped) {
+                try {
+                    val block = queue.take()
+                    block.run()
+                } catch (_: InterruptedException) {
+                    // Treat interruption as a signal to stop the dispatcher.
+                    stopped = true
+                    // Restore interrupt status for callers that may check it.
+                    Thread.currentThread().interrupt()
+                }
+            }
+        } finally {
+            thread = null
         }
     }
 }
