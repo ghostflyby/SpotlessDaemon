@@ -6,8 +6,6 @@
 
 ### Changed
 
-- refactor: sorted formatter to use subproject configs first [#53](https://github.com/ghostflyby/SpotlessDaemon/pull/53)
-
 ### Deprecated
 
 ### Removed
@@ -15,6 +13,12 @@
 ### Fixed
 
 ### Security
+
+## 0.5.2 - 2025-12-19
+
+### Changed
+
+- refactor: sorted formatter to use subproject configs first [#53](https://github.com/ghostflyby/SpotlessDaemon/pull/53)
 
 ## 0.5.1 - 2025-12-19
 
