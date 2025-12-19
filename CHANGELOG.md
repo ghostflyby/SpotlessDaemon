@@ -6,6 +6,8 @@
 
 ### Changed
 
+- downgrade ktor to 3.2.0 for Gradle 8.* compatibility
+
 ### Deprecated
 
 ### Removed
