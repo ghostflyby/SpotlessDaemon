@@ -15,17 +15,20 @@ import io.ktor.server.engine.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.Directory
 import org.gradle.api.file.FileCollection
-import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import java.io.File
 import java.nio.charset.Charset
+import java.util.*
 
 internal class KtorHttpAction(
     val port: Property<Int>,
@@ -33,6 +36,7 @@ internal class KtorHttpAction(
     val formatterMapping: ListProperty<Pair<FileCollection, Formatter>>,
     val targets: ConfigurableFileCollection,
     val projectRoot: Directory,
+    val taskDispatcher: TaskMainDispatcher,
 ) {
 
     private val logger = Logging.getLogger(KtorHttpAction::class.java)
@@ -55,12 +59,13 @@ internal class KtorHttpAction(
 
         server.application.routing {
             post("") {
-                action(org.gradle.problems.internal.impl.logger)
+                action()
             }
             post("/stop") {
-                org.gradle.problems.internal.impl.logger.lifecycle("Stop requested; shutting down Spotless Daemon")
+                logger.lifecycle("Stop requested; shutting down Spotless Daemon")
                 call.respond(HttpStatusCode.OK)
                 server.stop(1000, 2000)
+                taskDispatcher.stop()
             }
             get("") {
                 call.respondText("Spotless Daemon is running.")
@@ -82,7 +87,7 @@ internal class KtorHttpAction(
             }
         }
 
-        server.start(wait = true)
+        server.start(wait = false)
     }
 
     fun getFormatterFor(file: String): Formatter? {
@@ -123,7 +128,7 @@ internal class KtorHttpAction(
         return null
     }
 
-    internal suspend fun RoutingContext.action(logger: Logger) {
+    internal suspend fun RoutingContext.action() {
         val path = call.queryParameters["path"] ?: return call.respondText(
             "Missing path query parameter",
             status = HttpStatusCode.BadRequest,
@@ -133,9 +138,8 @@ internal class KtorHttpAction(
 
         logger.info("Handling request path=$path dryrun=$dryrun")
 
-        val result = withContext(Dispatchers.IO) {
+        val result =
             run(path, dryrun, content)
-        }
 
         if (result is Resp.NotFormatted) {
             call.respondText(result.content, status = result.status)
@@ -156,31 +160,85 @@ internal class KtorHttpAction(
 
     }
 
-    fun run(path: String, dryrun: Boolean, content: String): Resp {
+
+    private val lock = Mutex()
+    private val gates = IdentityHashMap<Any, CompletableDeferred<Unit>>() // key 按引用(identity)比较
+
+    suspend fun <R> firstTimeLatch(
+        key: Any,
+        first: suspend () -> R,
+        later: suspend () -> R,
+    ): R {
+        val gate: CompletableDeferred<Unit>
+        val isFirst: Boolean
+
+        lock.withLock {
+            val existing = gates[key]
+            if (existing == null) {
+                gate = CompletableDeferred()
+                gates[key] = gate
+                isFirst = true
+            } else {
+                gate = existing
+                isFirst = false
+            }
+        }
+
+        return if (isFirst) {
+            try {
+                val r = first()
+                gate.complete(Unit)
+                r
+            } catch (t: Throwable) {
+                gate.completeExceptionally(t)
+                throw t
+            }
+        } else {
+            gate.await()
+            later()
+        }
+    }
+
+    suspend fun run(path: String, dryrun: Boolean, content: String): Resp {
         val formatter = getFormatterFor(path) ?: run {
-            org.gradle.problems.internal.impl.logger.info("File not covered by Spotless: $path")
+            logger.info("File not covered by Spotless: $path")
             return Resp.NotFormatted("File not covered by Spotless: $path", HttpStatusCode.NotFound)
         }
 
         if (dryrun) {
-            org.gradle.problems.internal.impl.logger.info("Dry run request succeeded for $path")
+            logger.info("Dry run request succeeded for $path")
             return Resp.NotFormatted("", HttpStatusCode.OK)
         }
 
         val bytes = content.toByteArray(formatter.encoding)
-        val state = DirtyState.of(formatter, File(path), bytes, content)
+        val state: DirtyState =
+            firstTimeLatch(
+                formatter,
+                first = {
+                    logger.info("Initializing formatter for first time for $path")
+                    withContext(taskDispatcher) {
+                        DirtyState.of(formatter, File(path), bytes, content)
+                    }
+                },
+                later = {
+                    logger.info("Formatter already initialized; proceeding for $path")
+                    withContext(Dispatchers.IO) {
+                        DirtyState.of(formatter, File(path), bytes, content)
+                    }
+                },
+            )
 
 
         if (state.isClean) {
-            org.gradle.problems.internal.impl.logger.info("File already clean: $path")
+            logger.info("File already clean: $path")
             return Resp.NotFormatted("", HttpStatusCode.OK)
         }
 
 
         if (state.didNotConverge()) {
-            org.gradle.problems.internal.impl.logger.info("Formatter did not converge for $path")
+            logger.info("Formatter did not converge for $path")
         } else {
-            org.gradle.problems.internal.impl.logger.info("Formatted $path")
+            logger.info("Formatted $path")
         }
 
         return Resp.Formatted(state, formatter.encoding)

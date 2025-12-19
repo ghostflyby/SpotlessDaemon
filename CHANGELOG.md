@@ -12,6 +12,8 @@
 
 ### Fixed
 
+- init formatters with dependencies on task thread [#51](https://github.com/ghostflyby/SpotlessDaemon/pull/51)
+
 ### Security
 
 ## 0.5.0 - 2025-12-18

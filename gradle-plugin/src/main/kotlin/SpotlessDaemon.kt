@@ -8,7 +8,8 @@ package dev.ghostflyby.spotless.daemon
 
 import com.diffplug.gradle.spotless.SpotlessTask
 import com.diffplug.spotless.Formatter
-import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Runnable
 import org.gradle.api.DefaultTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -23,7 +24,9 @@ import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
 import org.gradle.work.DisableCachingByDefault
 import java.nio.charset.Charset
+import java.util.concurrent.ArrayBlockingQueue
 import javax.inject.Inject
+import kotlin.coroutines.CoroutineContext
 
 @Suppress("unused")
 class SpotlessDaemon : Plugin<Project> {
@@ -100,15 +103,16 @@ internal abstract class SpotlessDaemonTask @Inject constructor(private val layou
 
         try {
             logger.info("Spotless Daemon started; awaiting formatting requests")
+            val dispatcher = TaskMainDispatcher()
             KtorHttpAction(
                 port = port,
                 unixsocket = unixsocket,
                 formatterMapping = formatterMapping,
                 targets = targets,
                 projectRoot = layout.projectDirectory,
+                taskDispatcher = dispatcher,
             ).execute()
-
-        } catch (_: CancellationException) {
+            dispatcher.mainLoop()
         } catch (e: Exception) {
             logger.error("Spotless Daemon encountered an error", e)
         } finally {
@@ -117,4 +121,41 @@ internal abstract class SpotlessDaemonTask @Inject constructor(private val layou
 
     }
 
+}
+
+
+internal class TaskMainDispatcher : CoroutineDispatcher() {
+    private val queue = ArrayBlockingQueue<Runnable>(40)
+
+    @Volatile
+    private var stopped = false
+    private var thread: Thread? = null
+
+    fun stop() {
+        stopped = true
+        thread?.interrupt()
+    }
+
+    override fun dispatch(context: CoroutineContext, block: Runnable) {
+        queue.add(block)
+    }
+
+    fun mainLoop() {
+        thread = Thread.currentThread()
+        try {
+            while (!stopped) {
+                try {
+                    val block = queue.take()
+                    block.run()
+                } catch (_: InterruptedException) {
+                    // Treat interruption as a signal to stop the dispatcher.
+                    stopped = true
+                    // Restore interrupt status for callers that may check it.
+                    Thread.currentThread().interrupt()
+                }
+            }
+        } finally {
+            thread = null
+        }
+    }
 }
