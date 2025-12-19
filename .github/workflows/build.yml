@@ -30,13 +30,13 @@ jobs:
       - name: Build and Check
         run: ./gradlew build
       - name: Upload artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: artifacts
           path: ${{ github.workspace }}/*/build/libs/*.jar
       - name: Collect Tests Result
         if: ${{ always() }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: tests-result
           path: ${{ github.workspace }}/*/build/reports/tests
