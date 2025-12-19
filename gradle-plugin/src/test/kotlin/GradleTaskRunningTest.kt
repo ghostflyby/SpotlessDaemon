@@ -47,12 +47,20 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: Path)
                 id("com.diffplug.spotless")
                 id("dev.ghostflyby.spotless.daemon")
             }
+
+            repositories {
+                mavenCentral()
+            }
             
             spotless {
                 format("misc") {
                     target("*.txt")
                     trimTrailingWhitespace()
                     endWithNewline()
+                }
+                java {
+                    target("*.java")
+                    googleJavaFormat("1.22.0")
                 }
             }
             """.trimIndent(),
@@ -228,6 +236,46 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: Path)
             }
             assertEquals(HttpStatusCode.OK, response.status, "Should respond with 200 for covered files")
             assertEquals("hello world\n", response.bodyAsText(), "Should return formatted content")
+        } finally {
+            val stop = http.post("/stop")
+            assertEquals(HttpStatusCode.OK, stop.status, "Should respond with 200 OK on stop")
+            t.join()
+        }
+    }
+
+    @Test
+    @Timeout(90)
+    fun `post formats java file with external formatter dep`(): Unit = runBlocking {
+        val targetFile = projectDir.resolve("Sample.java")
+        val unformatted = "class Sample{void f( ){System.out.println(\"hi\");}}"
+        Files.writeString(targetFile, unformatted)
+
+        val t = startDaemonAndAwait()
+
+        try {
+            val action = suspend {
+                val response = http.post("") {
+                    url { parameters.append("path", projectDir.relativize(targetFile).toString()) }
+                    setBody(unformatted)
+                }
+                assertEquals(HttpStatusCode.OK, response.status, "Should respond with 200 for covered java files")
+                assertEquals(
+                    """
+                class Sample {
+                  void f() {
+                    System.out.println("hi");
+                  }
+                }
+                
+                """.trimIndent(),
+                    response.bodyAsText(),
+                    "Should return google-java-format output",
+                )
+            }
+            // first time includes downloading the formatter dependency on task thread
+            action()
+            // second time on IO Dispatcher
+            action()
         } finally {
             val stop = http.post("/stop")
             assertEquals(HttpStatusCode.OK, stop.status, "Should respond with 200 OK on stop")
