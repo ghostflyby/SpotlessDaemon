@@ -6,8 +6,6 @@
 
 ### Changed
 
-- downgrade ktor to 3.2.0 for Gradle 8.* compatibility
-
 ### Deprecated
 
 ### Removed
@@ -15,6 +13,12 @@
 ### Fixed
 
 ### Security
+
+## 0.5.3 - 2025-12-19
+
+### Changed
+
+- downgrade ktor to 3.2.0 for Gradle 8.* compatibility
 
 ## 0.5.2 - 2025-12-19
 
