@@ -22,9 +22,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.Directory
-import org.gradle.api.file.FileCollection
 import org.gradle.api.logging.Logging
-import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import java.io.File
 import java.nio.charset.Charset
@@ -33,7 +31,7 @@ import java.util.*
 internal class KtorHttpAction(
     val port: Property<Int>,
     val unixsocket: Property<String>,
-    val formatterMapping: ListProperty<Pair<FileCollection, Formatter>>,
+    val formatterMapping: List<FormatterEntry>,
     val targets: ConfigurableFileCollection,
     val projectRoot: Directory,
     val taskDispatcher: TaskMainDispatcher,
@@ -115,13 +113,10 @@ internal class KtorHttpAction(
     }
 
     private fun getFormatterFor(file: File): Formatter? {
-
-
-        val mapping = formatterMapping.get()
-        for ((key, value) in mapping) {
-            if (key.contains(file)) {
-                logger.info("Resolved formatter for ${file.absolutePath}")
-                return value
+        for (entry in formatterMapping) {
+            if (entry.files.contains(file)) {
+                logger.info("Resolved formatter for ${file.absolutePath} from project ${entry.projectDir}")
+                return entry.formatter
             }
         }
         logger.info("No formatter mapping found for ${file.absolutePath}")

@@ -14,7 +14,6 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.file.ConfigurableFileCollection
-import org.gradle.api.file.FileCollection
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
@@ -62,7 +61,13 @@ private fun Project.configureRootTask() = afterEvaluate {
                     Formatter.builder().steps(it.stepsInternalRoundtrip.steps)
                         .lineEndingsPolicy(it.lineEndingsPolicy.get())
                         .encoding(Charset.forName(it.encoding)).build()
-                formatterMapping.add(it.target to formatter)
+                formatterMapping.add(
+                    FormatterEntry(
+                        files = it.target,
+                        formatter = formatter,
+                        projectDir = projectDir,
+                    ),
+                )
             }
         }
     }
@@ -86,7 +91,7 @@ internal abstract class SpotlessDaemonTask @Inject constructor(private val layou
     abstract val port: Property<Int>
 
     @get:Internal
-    abstract val formatterMapping: ListProperty<Pair<FileCollection, Formatter>>
+    abstract val formatterMapping: ListProperty<FormatterEntry>
 
     @get:InputFiles
     abstract val targets: ConfigurableFileCollection
@@ -107,7 +112,8 @@ internal abstract class SpotlessDaemonTask @Inject constructor(private val layou
             KtorHttpAction(
                 port = port,
                 unixsocket = unixsocket,
-                formatterMapping = formatterMapping,
+                formatterMapping = formatterMapping.get()
+                    .sortedByDescending { it.projectDir.toPath().normalize().nameCount },
                 targets = targets,
                 projectRoot = layout.projectDirectory,
                 taskDispatcher = dispatcher,
