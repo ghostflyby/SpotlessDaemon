@@ -116,7 +116,7 @@ internal abstract class SpotlessDaemonTask @Inject constructor(private val layou
                 port = port,
                 unixsocket = unixsocket,
                 formatterMapping = formatterMapping.get()
-                    .sortedByDescending { it.projectDir.toPath().toAbsolutePath().nameCount },
+                    .sortedByDescending { it.projectDir.toPath().toAbsolutePath().normalize().nameCount },
                 targets = targets,
                 projectRoot = layout.projectDirectory,
                 taskDispatcher = dispatcher,
