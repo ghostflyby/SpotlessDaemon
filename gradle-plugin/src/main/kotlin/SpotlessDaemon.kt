@@ -37,9 +37,7 @@ class SpotlessDaemon : Plugin<Project> {
 
             target.tasks.register<SpotlessDaemonTask>(SPOTLESS_DAEMON_TASK_NAME)
 
-            target.afterEvaluate {
-                target.configureRootTask()
-            }
+            target.configureRootTask()
         }
     }
 
@@ -49,25 +47,27 @@ class SpotlessDaemon : Plugin<Project> {
     }
 }
 
-private fun Project.configureRootTask() = afterEvaluate {
+private fun Project.configureRootTask() {
 
     val daemonTask = tasks.named<SpotlessDaemonTask>(SpotlessDaemon.SPOTLESS_DAEMON_TASK_NAME)
 
     rootProject.allprojects {
-        tasks.withType<SpotlessTask>().forEach {
-            daemonTask.configure {
-                targets.from(it.target)
-                val formatter =
-                    Formatter.builder().steps(it.stepsInternalRoundtrip.steps)
-                        .lineEndingsPolicy(it.lineEndingsPolicy.get())
-                        .encoding(Charset.forName(it.encoding)).build()
-                formatterMapping.add(
-                    FormatterEntry(
-                        files = it.target,
-                        formatter = formatter,
-                        projectDir = projectDir,
-                    ),
-                )
+        afterEvaluate {
+            tasks.withType<SpotlessTask>().forEach {
+                daemonTask.configure {
+                    targets.from(it.target)
+                    val formatter =
+                        Formatter.builder().steps(it.stepsInternalRoundtrip.steps)
+                            .lineEndingsPolicy(it.lineEndingsPolicy.get())
+                            .encoding(Charset.forName(it.encoding)).build()
+                    formatterMapping.add(
+                        FormatterEntry(
+                            files = it.target,
+                            formatter = formatter,
+                            projectDir = projectDir,
+                        ),
+                    )
+                }
             }
         }
     }
@@ -109,11 +109,14 @@ internal abstract class SpotlessDaemonTask @Inject constructor(private val layou
         try {
             logger.info("Spotless Daemon started; awaiting formatting requests")
             val dispatcher = TaskMainDispatcher()
+            for (path in formatterMapping.get()) {
+                logger.lifecycle("Registered formatter for project at ${path.projectDir}: ${path.formatter}")
+            }
             KtorHttpAction(
                 port = port,
                 unixsocket = unixsocket,
                 formatterMapping = formatterMapping.get()
-                    .sortedByDescending { it.projectDir.toPath().normalize().nameCount },
+                    .sortedByDescending { it.projectDir.toPath().toAbsolutePath().normalize().nameCount },
                 targets = targets,
                 projectRoot = layout.projectDirectory,
                 taskDispatcher = dispatcher,
