@@ -12,9 +12,13 @@
 
 ### Fixed
 
-- setup task in multimodule project [#59](https://github.com/ghostflyby/SpotlessDaemon/pull/59)
-
 ### Security
+
+## 0.5.4 - 2025-12-20
+
+### Fixed
+
+- setup task in multimodule project [#59](https://github.com/ghostflyby/SpotlessDaemon/pull/59)
 
 ## 0.5.3 - 2025-12-19
 
