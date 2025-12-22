@@ -4,7 +4,7 @@
 
 [versions]
 spotless = "8.0.0"
-ktor = "3.2.0"
+ktor = "3.3.3"
 junit = "6.0.1"
 shadow = "9.3.0"
 
