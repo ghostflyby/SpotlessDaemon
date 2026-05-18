@@ -3,7 +3,7 @@
 # https://docs.gradle.org/current/userguide/platforms.html#sub::toml-dependencies-format
 
 [versions]
-spotless = "8.0.0"
+spotless = "8.5.1"
 ktor = "3.2.0"
 junit = "6.0.3"
 shadow = "9.4.1"
