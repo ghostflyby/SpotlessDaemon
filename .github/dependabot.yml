@@ -6,6 +6,12 @@ updates:
   # Maintain dependencies for Gradle dependencies
   - package-ecosystem: "gradle"
     directory: "/"
+    ignore:
+      # depends on kotlin-stdlib ABI,
+      # which is bundled with and determined by Gradle
+      - dependency-name: io.ktor:ktor-server-cio
+      - dependency-name: io.ktor:ktor-client-cio
+      - dependency-name: com.diffplug.spotless:com.diffplug.spotless.gradle.plugin
     schedule:
       interval: "daily"
   # Maintain dependencies for GitHub Actions
