@@ -13,7 +13,7 @@ jobs:
       pull-requests: write
     steps:
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.release.tag_name }}
 
@@ -22,7 +22,7 @@ jobs:
           distribution: zulu
           java-version: 17
 
-      - uses: gradle/actions/setup-gradle@v5
+      - uses: gradle/actions/setup-gradle@v6
         with:
           cache-read-only: true
           cache-encryption-key: ${{ secrets.GRADLE_CACHE_ENCRYPTION_KEY }}
