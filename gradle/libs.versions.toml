@@ -6,7 +6,7 @@
 spotless = "8.5.1"
 ktor = "3.2.0"
 junit = "6.1.0"
-shadow = "9.4.1"
+shadow = "9.5.1"
 
 [libraries]
 spotless = { module = "com.diffplug.spotless:com.diffplug.spotless.gradle.plugin", version.ref = "spotless" }
