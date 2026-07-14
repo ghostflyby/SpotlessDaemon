@@ -22,6 +22,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.concurrent.thread
 import kotlin.io.path.div
+import kotlin.time.Duration.Companion.milliseconds
 
 class SubprojectFormatterPriorityTest(@param:TempDir val projectDir: Path) {
 
@@ -119,7 +120,7 @@ include("child")
                     return@runBlocking
                 } catch (e: Exception) {
                     if (attempt == 59) throw e
-                    delay(500)
+                    delay(500.milliseconds)
                 }
             }
         }

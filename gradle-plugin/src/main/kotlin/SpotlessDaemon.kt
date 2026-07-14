@@ -27,7 +27,6 @@ import java.util.concurrent.ArrayBlockingQueue
 import javax.inject.Inject
 import kotlin.coroutines.CoroutineContext
 
-@Suppress("unused")
 class SpotlessDaemon : Plugin<Project> {
     override fun apply(target: Project) {
         target.pluginManager.withPlugin(SPOTLESS_PLUGIN_ID) {
