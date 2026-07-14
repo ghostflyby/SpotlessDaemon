@@ -343,4 +343,68 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: Path)
             t.join()
         }
     }
+
+    @Test
+    @Timeout(60)
+    fun `get steps missing path returns bad request`(): Unit = runBlocking {
+        val t = startDaemonAndAwait()
+
+        try {
+            val response = http.get("/steps")
+            assertEquals(HttpStatusCode.BadRequest, response.status, "Should respond with 400 when path missing")
+        } finally {
+            val stop = http.post("/stop")
+            assertEquals(HttpStatusCode.OK, stop.status, "Should respond with 200 OK on stop")
+            t.join()
+        }
+    }
+
+    @Test
+    @Timeout(60)
+    fun `get steps not covered returns not found`(): Unit = runBlocking {
+        val uncovered = projectDir.resolve("uncovered.kt")
+        Files.writeString(uncovered, "fun example() = 1")
+
+        val t = startDaemonAndAwait()
+
+        try {
+            val response = http.get("/steps") {
+                url { parameters.append("path", projectDir.relativize(uncovered).toString()) }
+            }
+            assertEquals(
+                HttpStatusCode.NotFound,
+                response.status,
+                "Should respond with 404 for files not covered by Spotless",
+            )
+        } finally {
+            val stop = http.post("/stop")
+            assertEquals(HttpStatusCode.OK, stop.status, "Should respond with 200 OK on stop")
+            t.join()
+        }
+    }
+
+    @Test
+    @Timeout(60)
+    fun `get steps returns formatter step names for covered file`(): Unit = runBlocking {
+        val targetFile = projectDir.resolve("sample.txt")
+        Files.writeString(targetFile, "hello world  ")
+
+        val t = startDaemonAndAwait()
+
+        try {
+            val response = http.get("/steps") {
+                url { parameters.append("path", projectDir.relativize(targetFile).toString()) }
+            }
+            assertEquals(HttpStatusCode.OK, response.status, "Should respond with 200 for covered files")
+            assertEquals(
+                "trimTrailingWhitespace\nendWithNewline",
+                response.bodyAsText(),
+                "Should return one formatter step name per line",
+            )
+        } finally {
+            val stop = http.post("/stop")
+            assertEquals(HttpStatusCode.OK, stop.status, "Should respond with 200 OK on stop")
+            t.join()
+        }
+    }
 }

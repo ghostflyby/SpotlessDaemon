@@ -83,6 +83,21 @@ internal class KtorHttpAction(
 
                 call.respondText(formatter.encoding.name(), ContentType.Text.Plain.withCharset(formatter.encoding))
             }
+            get("/steps") {
+                val path = call.queryParameters["path"] ?: return@get call.respondText(
+                    "Missing path query parameter",
+                    status = HttpStatusCode.BadRequest,
+                )
+
+                val formatter = getFormatterFor(path)
+
+                if (formatter == null) {
+                    call.respondText("File not covered by Spotless: $path", status = HttpStatusCode.NotFound)
+                    return@get
+                }
+
+                call.respondText(formatter.steps.joinToString("\n") { it.name }, ContentType.Text.Plain)
+            }
         }
 
         server.start(wait = false)
@@ -90,7 +105,6 @@ internal class KtorHttpAction(
 
     fun getFormatterFor(file: String): Formatter? {
         val relativeFile = projectRoot.file(file).asFile
-        logger.info("all known files: ${targets.files.joinToString("\n")}")
         if (targets.contains(relativeFile)) {
             return getFormatterFor(relativeFile)
         }
