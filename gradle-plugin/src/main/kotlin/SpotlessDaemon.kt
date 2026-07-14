@@ -94,6 +94,7 @@ internal abstract class SpotlessDaemonTask @Inject constructor(private val layou
     abstract val formatterMapping: ListProperty<FormatterEntry>
 
     @get:InputFiles
+    @get:PathSensitive(PathSensitivity.NONE)
     abstract val targets: ConfigurableFileCollection
 
     @TaskAction
