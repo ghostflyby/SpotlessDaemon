@@ -28,6 +28,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.concurrent.thread
 import kotlin.io.path.div
+import kotlin.time.Duration.Companion.milliseconds
 
 
 @ParameterizedClass
@@ -109,7 +110,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: Path)
                     return@runBlocking
                 } catch (e: Exception) {
                     if (attempt == 59) throw e
-                    delay(500)
+                    delay(500.milliseconds)
                 }
             }
         }
@@ -166,7 +167,7 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: Path)
                     return@repeat
                 } catch (e: Exception) {
                     if (it == 59) throw e // Last attempt failed
-                    delay(500)
+                    delay(500.milliseconds)
                 }
             }
             val stop = http.post("/stop")
