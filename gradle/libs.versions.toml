@@ -5,7 +5,7 @@
 [versions]
 spotless = "8.5.1"
 ktor = "3.2.0"
-junit = "6.1.0"
+junit = "6.1.2"
 shadow = "9.5.1"
 
 [libraries]
