@@ -40,6 +40,12 @@ The task will block, running the daemon until interrupted.
 * `404 Not Found` if file not covered by spotless, either no such file or not included in config.
 * `200 OK` with encoding name as `text/plain` in body if successful
 
+#### GET /steps?path={path}
+
+* `400 Bad Request` if `path` parameter is missing
+* `404 Not Found` if file not covered by spotless, either no such file or not included in config.
+* `200 OK` with formatter step names as `text/plain`, one per line, in configuration order
+
 #### POST /?path={path}
 
 * `404 Not Found` if file not covered by spotless, either no such file or not included in config.
