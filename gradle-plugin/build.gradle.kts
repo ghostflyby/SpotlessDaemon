@@ -28,7 +28,7 @@ gradlePlugin {
     }
 }
 
-val shadowClasspath by configurations.creating
+val shadowClasspath = configurations.create("signingInMemoryKey")
 
 dependencies {
     implementation(libs.spotless)
@@ -43,8 +43,8 @@ dependencies {
 }
 
 signing {
-    val signingInMemoryKey: String? by project
-    val signingInMemoryKeyPassword: String? by project
+    val signingInMemoryKey = project.findProperty("signingInMemoryKey")?.toString()
+    val signingInMemoryKeyPassword = project.findProperty("signingInMemoryKeyPassword")?.toString()
     useInMemoryPgpKeys(signingInMemoryKey, signingInMemoryKeyPassword)
 }
 
