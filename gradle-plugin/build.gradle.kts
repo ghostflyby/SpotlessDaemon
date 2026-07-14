@@ -28,7 +28,7 @@ gradlePlugin {
     }
 }
 
-val shadowClasspath = configurations.create("signingInMemoryKey")
+val shadowClasspath = configurations.create("shadowClasspath")
 
 dependencies {
     implementation(libs.spotless)
