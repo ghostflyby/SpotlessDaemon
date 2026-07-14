@@ -4,8 +4,6 @@
 
 ### Added
 
-- add GET `/steps` endpoint to retrieve formatter step names [#93](https://github.com/ghostflyby/SpotlessDaemon/pull/93)
-
 ### Changed
 
 ### Deprecated
@@ -15,6 +13,12 @@
 ### Fixed
 
 ### Security
+
+## 0.6.0 - 2026-07-14
+
+### Added
+
+- add GET `/steps` endpoint to retrieve formatter step names [#93](https://github.com/ghostflyby/SpotlessDaemon/pull/93)
 
 ## 0.5.4 - 2025-12-20
 
