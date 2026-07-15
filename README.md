@@ -54,6 +54,16 @@ The task will block, running the daemon until interrupted.
 * `200 OK` with empty body if no changes were made
 * `500 Internal Server Error` if problems occurred during formatting
 
+The optional `skipStep` query parameter skips formatter steps by their exact, case-sensitive names. Repeat the
+parameter to skip multiple steps, for example:
+
+```text
+POST /?path=Example.java&skipStep=trimTrailingWhitespace&skipStep=endWithNewline
+```
+
+Use `GET /steps?path={path}` to discover the configured names. Unknown and empty names are ignored. If all formatter
+steps are skipped, encoding and line-ending policies still apply.
+
 #### POST /?path={path}&dryrun
 
 * `404 Not Found` if file not covered by spotless, either no such file or not included in config.

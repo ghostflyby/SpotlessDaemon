@@ -245,6 +245,84 @@ class GradleTaskRunningTest(val kind: Kind, @param:TempDir val projectDir: Path)
     }
 
     @Test
+    @Timeout(60)
+    fun `post skips requested formatter step`(): Unit = runBlocking {
+        val targetFile = projectDir.resolve("sample.txt")
+        Files.writeString(targetFile, "hello world  ")
+
+        val t = startDaemonAndAwait()
+
+        try {
+            val response = http.post("") {
+                url {
+                    parameters.append("path", projectDir.relativize(targetFile).toString())
+                    parameters.append("skipStep", "endWithNewline")
+                }
+                setBody("hello world  ")
+            }
+            assertEquals(HttpStatusCode.OK, response.status, "Should respond with 200 for covered files")
+            assertEquals("hello world", response.bodyAsText(), "Should skip only the requested formatter step")
+        } finally {
+            val stop = http.post("/stop")
+            assertEquals(HttpStatusCode.OK, stop.status, "Should respond with 200 OK on stop")
+            t.join()
+        }
+    }
+
+    @Test
+    @Timeout(60)
+    fun `post accepts repeated skip step parameters`(): Unit = runBlocking {
+        val targetFile = projectDir.resolve("sample.txt")
+        Files.writeString(targetFile, "hello world  ")
+
+        val t = startDaemonAndAwait()
+
+        try {
+            val response = http.post("") {
+                url {
+                    parameters.append("path", projectDir.relativize(targetFile).toString())
+                    parameters.append("skipStep", "trimTrailingWhitespace")
+                    parameters.append("skipStep", "endWithNewline")
+                }
+                setBody("hello world  ")
+            }
+            assertEquals(HttpStatusCode.OK, response.status, "Should respond with 200 for covered files")
+            assertEquals("", response.bodyAsText(), "Should skip every requested formatter step")
+        } finally {
+            val stop = http.post("/stop")
+            assertEquals(HttpStatusCode.OK, stop.status, "Should respond with 200 OK on stop")
+            t.join()
+        }
+    }
+
+    @Test
+    @Timeout(60)
+    fun `post ignores unknown empty and case mismatched skip steps`(): Unit = runBlocking {
+        val targetFile = projectDir.resolve("sample.txt")
+        Files.writeString(targetFile, "hello world  ")
+
+        val t = startDaemonAndAwait()
+
+        try {
+            val response = http.post("") {
+                url {
+                    parameters.append("path", projectDir.relativize(targetFile).toString())
+                    parameters.append("skipStep", "")
+                    parameters.append("skipStep", "missing")
+                    parameters.append("skipStep", "EndWithNewline")
+                }
+                setBody("hello world  ")
+            }
+            assertEquals(HttpStatusCode.OK, response.status, "Should respond with 200 for covered files")
+            assertEquals("hello world\n", response.bodyAsText(), "Should ignore unmatched formatter step names")
+        } finally {
+            val stop = http.post("/stop")
+            assertEquals(HttpStatusCode.OK, stop.status, "Should respond with 200 OK on stop")
+            t.join()
+        }
+    }
+
+    @Test
     @Timeout(90)
     fun `post formats java file with external formatter dep`(): Unit = runBlocking {
         val targetFile = projectDir.resolve("Sample.java")
