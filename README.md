@@ -58,7 +58,7 @@ The optional `skipStep` query parameter skips formatter steps by their exact, ca
 parameter to skip multiple steps, for example:
 
 ```text
-POST /?path=Example.java&skipStep=expandwildcardimports&skipStep=otherStep
+POST /?path=Example.java&skipStep=trimTrailingWhitespace&skipStep=endWithNewline
 ```
 
 Use `GET /steps?path={path}` to discover the configured names. Unknown and empty names are ignored. If all formatter

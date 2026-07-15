@@ -143,7 +143,9 @@ internal class KtorHttpAction(
             status = HttpStatusCode.BadRequest,
         )
         val dryrun = call.queryParameters["dryrun"] != null
-        val skippedSteps = call.queryParameters.getAll("skipStep").orEmpty().toSet()
+        val skippedSteps = call.queryParameters.getAll("skipStep")
+            .orEmpty()
+            .filterTo(linkedSetOf()) { it.isNotEmpty() }
         val content = call.receiveText()
 
         logger.info("Handling request path=$path dryrun=$dryrun skippedSteps=$skippedSteps")
@@ -226,23 +228,31 @@ internal class KtorHttpAction(
             return Resp.NotFormatted("", HttpStatusCode.OK)
         }
 
-        val formatter = skippedFormatterCache.get(configuredFormatter, skippedSteps)
+        val formatterSelection = skippedFormatterCache.get(configuredFormatter, skippedSteps)
+        val formatter = formatterSelection.formatter
         val bytes = content.toByteArray(formatter.encoding)
-        val state: DirtyState = firstTimeLatch(
-            formatter,
-            first = {
-                logger.info("Initializing formatter for first time for $path with skipped steps: $skippedSteps")
-                withContext(taskDispatcher) {
-                    DirtyState.of(formatter, File(path), bytes, content)
-                }
-            },
-            later = {
-                logger.info("Formatter already initialized; proceeding for $path with skipped steps: $skippedSteps")
-                withContext(Dispatchers.IO) {
-                    DirtyState.of(formatter, File(path), bytes, content)
-                }
-            },
-        )
+        val state: DirtyState = if (formatterSelection.useInitializationGate) {
+            firstTimeLatch(
+                formatter,
+                first = {
+                    logger.info("Initializing formatter for first time for $path with skipped steps: $skippedSteps")
+                    withContext(taskDispatcher) {
+                        DirtyState.of(formatter, File(path), bytes, content)
+                    }
+                },
+                later = {
+                    logger.info("Formatter already initialized; proceeding for $path with skipped steps: $skippedSteps")
+                    withContext(Dispatchers.IO) {
+                        DirtyState.of(formatter, File(path), bytes, content)
+                    }
+                },
+            )
+        } else {
+            logger.info("Formatting $path with an uncached skipped-step combination: $skippedSteps")
+            withContext(taskDispatcher) {
+                DirtyState.of(formatter, File(path), bytes, content)
+            }
+        }
 
 
         if (state.isClean) {
@@ -263,25 +273,46 @@ internal class KtorHttpAction(
 
 }
 
-internal class SkippedFormatterCache {
+internal data class FormatterSelection(
+    val formatter: Formatter,
+    val useInitializationGate: Boolean,
+)
+
+internal class SkippedFormatterCache(
+    private val maxCachedCombinationsPerFormatter: Int = 64,
+) {
     private val lock = Mutex()
     private val formatters = IdentityHashMap<Formatter, MutableMap<Set<String>, Formatter>>()
 
-    suspend fun get(configuredFormatter: Formatter, requestedSkippedStepNames: Set<String>): Formatter {
-        if (requestedSkippedStepNames.isEmpty()) return configuredFormatter
+    init {
+        require(maxCachedCombinationsPerFormatter >= 0)
+    }
+
+    suspend fun get(configuredFormatter: Formatter, requestedSkippedStepNames: Set<String>): FormatterSelection {
+        if (requestedSkippedStepNames.isEmpty()) return FormatterSelection(configuredFormatter, true)
 
         val effectiveSkippedStepNames = configuredFormatter.steps
             .asSequence()
             .map { it.name }
             .filter { it in requestedSkippedStepNames }
             .toSet()
-        if (effectiveSkippedStepNames.isEmpty()) return configuredFormatter
+        if (effectiveSkippedStepNames.isEmpty()) return FormatterSelection(configuredFormatter, true)
 
         return lock.withLock {
-            formatters.getOrPut(configuredFormatter) { mutableMapOf() }
-                .getOrPut(effectiveSkippedStepNames) {
-                    configuredFormatter.withSkippedSteps(effectiveSkippedStepNames)
+            val cachedCombinations = formatters[configuredFormatter]
+            val cachedFormatter = cachedCombinations?.get(effectiveSkippedStepNames)
+            if (cachedFormatter != null) return@withLock FormatterSelection(cachedFormatter, true)
+
+            val formatter = configuredFormatter.withSkippedSteps(effectiveSkippedStepNames)
+            if ((cachedCombinations?.size ?: 0) >= maxCachedCombinationsPerFormatter) {
+                FormatterSelection(formatter, false)
+            } else {
+                val cache = cachedCombinations ?: mutableMapOf<Set<String>, Formatter>().also {
+                    formatters[configuredFormatter] = it
                 }
+                cache[effectiveSkippedStepNames] = formatter
+                FormatterSelection(formatter, true)
+            }
         }
     }
 }

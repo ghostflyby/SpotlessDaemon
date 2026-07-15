@@ -68,8 +68,28 @@ class FormatterOptionsTest {
         val sameCombination = cache.get(formatter, setOf("trimTrailingWhitespace"))
         val otherFormatter = cache.get(equalButDistinctFormatter, setOf("trimTrailingWhitespace"))
 
-        assertSame(first, sameCombination)
-        assertNotSame(first, otherFormatter)
-        assertSame(formatter, cache.get(formatter, setOf("missing", "EndWithNewline")))
+        assertTrue(first.useInitializationGate)
+        assertSame(first.formatter, sameCombination.formatter)
+        assertNotSame(first.formatter, otherFormatter.formatter)
+        assertSame(formatter, cache.get(formatter, setOf("missing", "EndWithNewline")).formatter)
+    }
+
+    @Test
+    fun `cache bounds formatter combinations without creating initialization gates for overflow`(): Unit = runBlocking {
+        val formatter = Formatter.builder()
+            .steps(listOf(TrimTrailingWhitespaceStep.create(), EndWithNewlineStep.create()))
+            .lineEndingsPolicy(LineEnding.UNIX.createPolicy())
+            .encoding(StandardCharsets.UTF_8)
+            .build()
+        val cache = SkippedFormatterCache(maxCachedCombinationsPerFormatter = 1)
+
+        val cached = cache.get(formatter, setOf("trimTrailingWhitespace"))
+        val overflow = cache.get(formatter, setOf("endWithNewline"))
+        val repeatedOverflow = cache.get(formatter, setOf("endWithNewline"))
+
+        assertTrue(cached.useInitializationGate)
+        assertFalse(overflow.useInitializationGate)
+        assertFalse(repeatedOverflow.useInitializationGate)
+        assertNotSame(overflow.formatter, repeatedOverflow.formatter)
     }
 }
