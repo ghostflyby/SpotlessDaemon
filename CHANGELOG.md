@@ -4,9 +4,6 @@
 
 ### Added
 
-- add repeatable `skipStep` query parameter to skip selected formatter
-  steps [#95](https://github.com/ghostflyby/SpotlessDaemon/pull/95)
-
 ### Changed
 
 ### Deprecated
@@ -16,6 +13,13 @@
 ### Fixed
 
 ### Security
+
+## 0.7.0 - 2026-07-15
+
+### Added
+
+- add repeatable `skipStep` query parameter to skip selected formatter
+  steps [#95](https://github.com/ghostflyby/SpotlessDaemon/pull/95)
 
 ## 0.6.0 - 2026-07-14
 
